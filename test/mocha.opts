@@ -1,0 +1,7 @@
+--reporter=spec
+--require should
+--require babel-polyfill
+--require ./test-polyfill.js
+
+./test
+./src/**/test.js

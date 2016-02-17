@@ -1,0 +1,18 @@
+{
+  "presets": [
+    "es2015",
+    "stage-0",
+    "react"
+  ],
+  "plugins": [
+    ["contracts", {
+      "env": {
+        "production": {
+          "strip": true
+        }
+      }
+    }],
+    ["trace", {strip: true}]
+  ],
+  "passPerPreset": true
+}

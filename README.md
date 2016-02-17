@@ -17,10 +17,10 @@ npm install type-realm
 
 ```js
 
-import Blockstore from "blockstore";
+import Backing from "backing";
 import TypeRealm from "type-realm";
 
-const blockstore = new Blockstore({
+const backing = new Backing({
   name: 'demo',
   arenaSize: 16 * 1024 * 1024, // 16Mb, set to the largest possible value for your environment, up to 2Gb.
   arenaAllocator: {
@@ -29,7 +29,7 @@ const blockstore = new Blockstore({
   }
 });
 
-const realm = new TypeRealm(blockstore);
+const realm = new TypeRealm(backing);
 
 async function run () {
   await realm.init();

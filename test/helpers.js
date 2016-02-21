@@ -11,7 +11,7 @@ global.jdump = function jdump (...args) {
 
 
 
-ensureDeterministicRandom();
+// ensureDeterministicRandom();
 
 
 function ensureDeterministicRandom () {

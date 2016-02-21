@@ -6,7 +6,7 @@ export class TypedObject {
 
 }
 
-export const $isType = Symbol('isType');
+import {$isType} from "../symbols";
 
 /**
  * Make the TypeClass meta-class for the given realm.

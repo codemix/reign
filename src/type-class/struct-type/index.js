@@ -2,6 +2,18 @@
 import Backing from "backing";
 import {TypedObject} from "../";
 
+import {
+  createInitializeStruct,
+  createStoreStruct,
+  createToJSON,
+  createCleanupStruct,
+  createCompareValues,
+  createCompareAddresses,
+  createCompareAddressValue,
+  createHashStruct,
+  createRandomValue
+} from "./methods";
+
 import type {Realm} from "../../";
 
 import type {$isType} from "../";
@@ -18,14 +30,23 @@ export type StructOptions = {
   defaults?: Object;
 };
 
-export const $Backing = Symbol.for('Backing');
-export const $Address = Symbol.for('Address');
+import {
+  $Backing,
+  $Address,
+  $CanBeEmbedded,
+  $CanBeReferenced,
+  $CanContainReferences
+} from "../../symbols";
 
 export class Struct extends TypedObject {}
 
 export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm): TypeClass<Struct> {
-  return new TypeClass('StructType', (name: string, fields?: StructFieldsConfig, options?: StructOptions): Function => {
-    return (Partial: Function): Object => {
+  return new TypeClass('StructType', (name: string, fields: ?StructFieldsConfig, options: ?StructOptions) => {
+    return (Partial: Function) => {
+
+      Partial[$CanBeEmbedded] = true;
+      Partial[$CanBeReferenced] = true;
+
       const prototype = Object.create(Struct.prototype);
 
       let isFinalized = false;
@@ -36,14 +57,14 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
       const metadata = {
         byteLength: 0,
         byteAlignment: 0,
-        allocationSize: 0
+        structWriter: undefined,
+        canContainReferences: false
       };
 
       /**
        * The specialized type which references this kind of struct.
        */
       const Reference = new ReferenceType(`Reference<${name}>`, Partial);
-
 
       /**
        * The constructor for struct type instances.
@@ -66,22 +87,9 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
        * Allocate space for the given struct and write the input if any.
        */
       function createStruct (backing: Backing, input: any): float64 {
-        const address = backing.gc.alloc(metadata.allocationSize);
-        initializeStruct(backing, address, input);
+        const address = backing.gc.alloc(metadata.byteLength);
+        Partial.initialize(backing, address, input);
         return address;
-      }
-
-      /**
-       * Initialize the struct at the given address.
-       */
-      function initializeStruct (backing: Backing, address: float64, input: any) {
-
-        if (input != null) {
-
-        }
-        else {
-
-        }
       }
 
       /**
@@ -93,11 +101,101 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
         }
 
         const fields = processStructConfig(fieldsConfig, options);
+        const fieldOffsets = {};
+        const fieldTypes = {};
 
+        for (const field of fields) {
+          const {name, type} = field;
+          if (type.byteAlignment > metadata.byteAlignment) {
+            metadata.byteAlignment = type.byteAlignment;
+          }
 
+          field.offset = alignTo(metadata.byteLength, type.byteAlignment);
+          metadata.byteLength = field.offset + type.byteLength;
+
+          fieldOffsets[name] = field.offset;
+          fieldTypes[name] = type;
+
+          defineAccessors(field);
+          if (type[$CanContainReferences]) {
+            metadata.canContainReferences = true;
+          }
+        }
+        metadata.byteLength = alignTo(metadata.byteLength, metadata.byteAlignment);
+
+        Object.freeze(fieldOffsets);
+        Object.freeze(fieldTypes);
+
+        Partial[$CanContainReferences] = metadata.canContainReferences;
+
+        Object.defineProperties(Partial, {
+          byteLength: {
+            value: metadata.byteLength
+          },
+          byteAlignment: {
+            value: metadata.byteAlignment
+          },
+          fieldOffsets: {
+            value: fieldOffsets
+          },
+          fieldTypes: {
+            value: fieldTypes
+          },
+          initialize: {
+            value: createInitializeStruct(Partial, fields)
+          },
+          store: {
+            value: createStoreStruct(Partial, fields)
+          },
+          load: {
+            value (backing: Backing, address: float64): Partial {
+              return new Partial(backing, address);
+            }
+          },
+          cleanup: {
+            value: createCleanupStruct(fields)
+          },
+          compareValues: {
+            value: createCompareValues(fields)
+          },
+          compareAddresses: {
+            value: createCompareAddresses(fields)
+          },
+          compareAddressValue: {
+            value: createCompareAddressValue(fields)
+          },
+          hashValue: {
+            value: createHashStruct(fields)
+          },
+          randomValue: {
+            value: createRandomValue(fields)
+          }
+        });
+
+        Object.defineProperties(prototype, {
+          toJSON: {
+            value: createToJSON(fields)
+          }
+        });
 
         isFinalized = true;
         return Partial;
+      }
+
+      /**
+       * Define the getter and setter for a field.
+       */
+      function defineAccessors<T> (field: StructField<T>): void {
+        const {name, type, offset} = field;
+        Object.defineProperty(prototype, name, {
+          enumerable: true,
+          get (): T {
+            return type.load(this[$Backing], this[$Address] + offset);
+          },
+          set (value: any) {
+            type.store(this[$Backing], this[$Address] + offset, value);
+          }
+        });
       }
 
       /**
@@ -109,8 +207,8 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
         if (Array.isArray(fields)) {
           const names = new Set();
           for (const [name, type] of fields) {
-            if (!type || !type[$isType]) {
-              throw new TypeError(`Field "${name}" must be a finalized type.`);
+            if (!type || !type[$CanBeEmbedded]) {
+              throw new TypeError(`Field "${name}" must be an embeddable, finalized type.`);
             }
             if (names.has(name)) {
               throw new TypeError(`A field with the name "${name}" already exists.`);
@@ -126,9 +224,9 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
           return normalized;
         }
         else {
-          for (const name of Object.keys()) {
+          for (const name of Object.keys(fields)) {
             const type = fields[name];
-            if (!type || !type[$isType]) {
+            if (!type || !type[$CanBeEmbedded]) {
               throw new TypeError(`Field "${name}" must be a finalized type.`);
             }
             normalized.push({
@@ -149,7 +247,7 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
        *
        * @fixme this is not currently very good, can do better.
        */
-      function optimizeFieldLayout (Struct: PartialType, fields: StructField<any>[]): StructField<any>[] {
+      function optimizeFieldLayout (fields: StructField<any>[]): StructField<any>[] {
         return fields.sort(compareFieldsByByteAlignmentOrName);
       }
 
@@ -185,8 +283,31 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
         prototype,
         gc: true,
         ref: Reference,
-        finalize: finalizeLayout
+        finalize: finalizeLayout,
+        cast (input: any): ?Partial {
+          if (input == null) {
+            return null;
+          }
+          else if (input instanceof Partial) {
+            return input;
+          }
+          else {
+            return new Partial(input);
+          }
+        },
+        emptyValue () {
+          return null;
+        }
       };
     };
   });
 };
+
+
+/**
+ * Ensure that the given value is aligned to the given number of bytes.
+ */
+export function alignTo (value: number, numberOfBytes: number): number {
+  const rem = value % numberOfBytes;
+  return rem === 0 ? value : value + (numberOfBytes - rem);
+}

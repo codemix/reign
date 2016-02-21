@@ -3,6 +3,9 @@ import {make as makeTypeClass} from "./type-class";
 import {make as makePrimitiveType} from "./type-class/primitive-type";
 import {make as makeReferenceType} from "./type-class/reference-type";
 import {make as makeStructType} from "./type-class/struct-type";
+import {make as makeArrayType} from "./type-class/array-type";
+import {make as makeHashMapType} from "./type-class/hash-map-type";
+
 
 import {registerBuiltins} from "./builtins";
 
@@ -17,6 +20,7 @@ export class Realm {
   PrimitiveType: Class<Type<any>>;
   ReferenceType: Class<Type<any>>;
   StructType: Class<Type<any>>;
+  ArrayType: Class<Type<any>>;
 
   T: {
     [name: string|Symbol]: Type;
@@ -32,13 +36,15 @@ export class Realm {
 
   constructor (backing: Backing) {
     this.backing = backing;
+    this.registry = backing.registry;
+    this.T = this.registry.T;
+    this.I = this.registry.I;
     this.TypeClass = makeTypeClass(this);
     this.PrimitiveType = makePrimitiveType(this);
     this.ReferenceType = makeReferenceType(this);
     this.StructType = makeStructType(this);
-    this.registry = backing.registry;
-    this.T = this.registry.T;
-    this.I = this.registry.I;
+    this.ArrayType = makeArrayType(this);
+    this.HashMapType = makeHashMapType(this);
     this.isInitialized = false;
     registerBuiltins(this);
   }

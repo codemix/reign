@@ -373,7 +373,7 @@ export function make ({TypeClass, ReferenceType, backing}: Realm): TypeClass<Typ
             const length = backing.getUint32(address + 8);
             let current = existing;
             for (let i = 0; i < length; i++) {
-              ElementType.cleanup(backing, current);
+              ElementType.destructor(backing, current);
               current += ElementType.byteLength;
             }
           }
@@ -470,24 +470,34 @@ export function make ({TypeClass, ReferenceType, backing}: Realm): TypeClass<Typ
         initialize: initializeArray,
         store: storeArray,
         load: loadArray,
-        cleanup (backing: Backing, address: float64): void {
+        clear (backing: Backing, address: float64): void {
+          const pointer = backing.getFloat64(address);
+          assert: pointer > 0;
+          const length = backing.getUint32(address + 8);
+          let current = pointer;
+          for (let i = 0; i < length; i++) {
+            ElementType.clear(backing, current);
+            current += ElementType.byteLength;
+          }
+        },
+        destructor (backing: Backing, address: float64): void {
           const pointer = backing.getFloat64(address);
           assert: pointer > 0;
           if (canContainReferences) {
             const length = backing.getUint32(address + 8);
             let current = pointer;
             for (let i = 0; i < length; i++) {
-              ElementType.cleanup(backing, current);
+              ElementType.destructor(backing, current);
               current += ElementType.byteLength;
             }
           }
-          backing.setFloat64(address, 0);
-          backing.setUint32(address + 8, 0);
           if (pointer !== address + 16) {
             // this was allocated using `TypedArray.store()`
             // so we need to reclaim the data segment separately
             backing.free(pointer);
           }
+          backing.setFloat64(address, 0);
+          backing.setUint32(address + 8, 0);
         },
         compareValues (valueA: any, valueB: any): int8 {
           if (valueA === valueB) {

@@ -36,8 +36,11 @@ export function make ({TypeClass, backing}: Realm): TypeClass<Primitive> {
         initialize (backing: Backing, address: float64, initialValue?: any): void {
           primitive.store(backing, address, initialValue);
         },
-        cleanup (backing: Backing, address: float64): void {
+        clear (backing: Backing, address: float64): void {
           primitive.store(backing, address, primitive.emptyValue());
+        },
+        destructor (): void {
+          // no-op
         },
         constructor (input: Backing|any, address?: float64): any {
           if (this instanceof Primitive) {

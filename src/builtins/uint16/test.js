@@ -53,7 +53,7 @@ describeRealm('Builtin: Uint16', function (options) {
     });
   });
 
-  describe('.initialize(), .store(), .load() and .cleanup()', function () {
+  describe('.initialize(), .store(), .load() and .clear()', function () {
     let input;
     before(() => {
       input = T.Uint16.randomValue();
@@ -75,8 +75,8 @@ describeRealm('Builtin: Uint16', function (options) {
       T.Uint16.load(backing, address).should.equal(input);
     });
 
-    it('should clean up a value from an address', function () {
-      T.Uint16.cleanup(backing, address);
+    it('should clear a value from an address', function () {
+      T.Uint16.clear(backing, address);
     });
 
     it('should load an empty value from a cleaned up address', function () {

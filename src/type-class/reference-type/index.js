@@ -42,9 +42,7 @@ export function make ({TypeClass}: Realm): TypeClass<any> {
         else {
           // @fixme more safety checking here.
           const instance = Type.cast(value);
-          if (Type.gc) {
-            backing.gc.ref(instance[$Address]);
-          }
+          backing.gc.ref(instance[$Address]);
           backing.setFloat64(address, instance[$Address]);
         }
       }
@@ -65,16 +63,23 @@ export function make ({TypeClass}: Realm): TypeClass<any> {
       /**
        * Remove a reference at the given address.
        */
-      function cleanupReference (backing: Backing, address: float64) {
+      function clearReference (backing: Backing, address: float64) {
         const pointer = backing.getFloat64(address);
-        if (pointer === 0) {
-          return;
-        }
-
-        if (Type.gc) {
+        if (pointer !== 0) {
+          backing.setFloat64(address, 0);
           backing.gc.unref(pointer);
         }
-        backing.setFloat64(address, 0);
+      }
+
+      /**
+       * Destroy a reference at the given address.
+       */
+      function referenceDestructor (backing: Backing, address: float64) {
+        const pointer = backing.getFloat64(address);
+        if (pointer !== 0) {
+          backing.setFloat64(address, 0);
+          backing.gc.unref(pointer);
+        }
       }
 
       return {
@@ -84,7 +89,8 @@ export function make ({TypeClass}: Realm): TypeClass<any> {
         initialize: storeReference,
         store: storeReference,
         load: loadReference,
-        cleanup: cleanupReference,
+        clear: clearReference,
+        destructor: referenceDestructor,
         emptyValue () {
           return null;
         },

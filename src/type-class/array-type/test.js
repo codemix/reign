@@ -115,8 +115,19 @@ describeRealm('ArrayType', function (options) {
         result.should.equal(input[15]);
       });
 
-      it('should cleanup the array', function () {
-        XArray.cleanup(array[$Backing], array[$Address]);
+      it('should clear the array', function () {
+        XArray.clear(array[$Backing], array[$Address]);
+      });
+
+      it('should have empty values for contents', function () {
+        array.length.should.equal(16);
+        array.forEach(item => {
+          item.should.eql(Type.emptyValue());
+        });
+      });
+
+      it('should destroy the array', function () {
+        XArray.destructor(array[$Backing], array[$Address]);
       });
 
       it('should now have a length of zero', function () {

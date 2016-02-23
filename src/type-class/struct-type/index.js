@@ -6,7 +6,8 @@ import {
   createInitializeStruct,
   createStoreStruct,
   createToJSON,
-  createCleanupStruct,
+  createStructDestructor,
+  createClearStruct,
   createCompareValues,
   createCompareAddresses,
   createCompareAddressValue,
@@ -152,8 +153,11 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
               return new Partial(backing, address);
             }
           },
-          cleanup: {
-            value: createCleanupStruct(fields)
+          clear: {
+            value: createClearStruct(fields)
+          },
+          destructor: {
+            value: createStructDestructor(fields)
           },
           compareValues: {
             value: createCompareValues(fields)

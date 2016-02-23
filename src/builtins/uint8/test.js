@@ -53,7 +53,7 @@ describeRealm('Builtin: Uint8', function (options) {
     });
   });
 
-  describe('.initialize(), .store(), .load() and .cleanup()', function () {
+  describe('.initialize(), .store(), .load() and .clear()', function () {
     let input;
     before(() => {
       input = T.Uint8.randomValue();
@@ -75,8 +75,8 @@ describeRealm('Builtin: Uint8', function (options) {
       T.Uint8.load(backing, address).should.equal(input);
     });
 
-    it('should clean up a value from an address', function () {
-      T.Uint8.cleanup(backing, address);
+    it('should clear a value from an address', function () {
+      T.Uint8.clear(backing, address);
     });
 
     it('should load an empty value from a cleaned up address', function () {

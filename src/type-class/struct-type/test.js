@@ -60,8 +60,8 @@ describeRealm('StructType', function (options) {
       });
     });
 
-    it('should clean up the struct', function () {
-      SimpleStruct.cleanup(struct[$Backing], struct[$Address]);
+    it('should clear the struct', function () {
+      SimpleStruct.clear(struct[$Backing], struct[$Address]);
     });
 
     it('should have reset the value to zero', function () {
@@ -170,8 +170,8 @@ describeRealm('StructType', function (options) {
       });
     });
 
-    it('should clean up the struct', function () {
-      RGBA.cleanup(struct[$Backing], struct[$Address]);
+    it('should clear the struct', function () {
+      RGBA.clear(struct[$Backing], struct[$Address]);
     });
 
     it('should have reset the field values to zero', function () {

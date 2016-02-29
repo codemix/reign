@@ -67,6 +67,19 @@ describeRealm('StructType', function (options) {
     it('should have reset the value to zero', function () {
       struct.value.should.equal(0);
     });
+
+    it('should create an array of structs', function () {
+      const arr = new SimpleStruct.Array(5);
+      arr.length.should.equal(5);
+      arr[3].value = 12;
+      JSON.parse(JSON.stringify(arr)).should.eql([
+        { value: 0 },
+        { value: 0 },
+        { value: 0 },
+        { value: 12 },
+        { value: 0 }
+      ]);
+    });
   });
 
   describe('Multiple fields', function () {

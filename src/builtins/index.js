@@ -15,6 +15,7 @@ import {make as makeFloat64} from "./float64";
 //import {make as makeNumber} from "./number";
 
 import {make as makeBoolean} from "./boolean";
+import {make as makeString} from "./string";
 
 
 export function registerBuiltins (realm: Realm): TypeRegistry {
@@ -31,6 +32,7 @@ export function registerBuiltins (realm: Realm): TypeRegistry {
   registry.add(makeFloat64(realm, 8));
   //registry.add(makeNumber(realm, 9));
   registry.add(makeBoolean(realm, 10));
+  registry.add(makeString(realm, 11));
 
   return registry;
 }

@@ -12,7 +12,11 @@
         }
       }
     }],
-    ["trace", {strip: true}]
+    ["trace", {strip: true}],
+    ["transform-async-to-module-method", {
+      "module": "bluebird",
+      "method": "coroutine"
+    }]
   ],
   "passPerPreset": true
 }

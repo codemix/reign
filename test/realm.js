@@ -11,8 +11,9 @@ global.describeRealm = describeRealm;
 
 function runTest (describe: Function, label: string, test: ?Function) {
   describe(label, function (options) {
-    before(() => {
+    before(async () => {
       options.realm = new Realm(options.backing);
+      await options.realm.init();
     });
 
     if (test) {

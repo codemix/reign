@@ -190,6 +190,48 @@ export function createCompareAddresses (fields: StructField<any>[]): (a: float64
 }
 
 /**
+ * Create a function which can determine whether two structs are structurally equal.
+ */
+export function createEqual (fields: StructField<any>[]): (a: Object, b: Object) => boolean {
+  const checkValues = fields.map(({name}, index) => {
+    if (isValidIdentifier(name)) {
+      return `
+        else if (!type${index}.equal(a.${name}, b.${name})) {
+          return false;
+        }
+      `;
+    }
+    else {
+      const sanitizedName = JSON.stringify(name);
+      return `
+        else if (!type${index}.equal(a[${sanitizedName}], b[${sanitizedName}])) {
+          return false;
+        }
+      `;
+    }
+  }).join('');
+  const argNames = fields.map((_, index) => `type${index}`);
+  const args = fields.map(({type}) => type);
+  const body = `
+      "use strict";
+      return function equal (a, b) {
+        if (a === b) {
+          return true;
+        }
+        else if (a == null || b == null) {
+          return false;
+        }
+      ${checkValues}
+        else {
+          return true;
+        }
+      };
+  `;
+  return ((Function(...argNames, body))(...args): ((a: Object, b: Object) => boolean));
+}
+
+
+/**
  * Create a function which can compare two struct instances.
  */
 export function createCompareValues (fields: StructField<any>[]): (a: Object, b: Object) => int8 {
@@ -233,6 +275,7 @@ export function createCompareValues (fields: StructField<any>[]): (a: Object, b:
   `;
   return ((Function(...argNames, body))(...args): ((a: Object, b: Object) => int8));
 }
+
 
 /**
  * Create a function which can compare a struct stored at a given address with a given value.

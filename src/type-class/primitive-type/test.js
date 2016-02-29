@@ -20,11 +20,14 @@ describeRealm('PrimitiveType', function (options) {
     Double = new PrimitiveType('Double', {
       byteAlignment: 8,
       byteLength: 8,
+      emptyValue () {
+        return 0;
+      },
       store (backing: Backing, address: float64, value: number): void {
-        backing.writeFloat64(address, value);
+        backing.setFloat64(address, value || 0);
       },
       load (backing: Backing, address: float64): number {
-        return backing.readFloat64(backing, address);
+        return backing.getFloat64(address);
       }
     });
   });
@@ -35,5 +38,21 @@ describeRealm('PrimitiveType', function (options) {
 
   it('should cast a value', function () {
     instance = Double(123.456);
+  });
+
+  it('should create an array type', function () {
+    Double.Array.should.be.an.instanceOf(realm.ArrayType);
+  });
+
+  it('should get the same array type twice', function () {
+    Double.Array.should.equal(Double.Array);
+  });
+
+  it('should create an array of 20 doubles', function () {
+    const arr = new Double.Array(20);
+    arr.length.should.equal(20);
+    arr.forEach(item => {
+      item.should.equal(0);
+    });
   });
 });

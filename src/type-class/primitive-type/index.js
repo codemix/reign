@@ -18,12 +18,24 @@ export class Primitive extends TypedObject {}
 /**
  * Makes a PrimitiveType type class for a given realm.
  */
-export function make ({TypeClass, backing}: Realm): TypeClass<Primitive> {
+export function make (realm: Realm): TypeClass<Primitive> {
+  const {TypeClass, backing} = realm;
   return new TypeClass('PrimitiveType', (name: string, config: Object): Function => {
     return (primitive: Type<any>): Object => {
       primitive[$CanBeEmbedded] = true;
       primitive[$CanBeReferenced] = false;
       primitive[$CanContainReferences] = false;
+      let TypedArray;
+      Object.defineProperties(primitive, {
+        Array: {
+          get () {
+            if (TypedArray === undefined) {
+              TypedArray = new realm.ArrayType(primitive);
+            }
+            return TypedArray;
+          }
+        }
+      });
       return Object.assign({
         name,
         gc: false,
@@ -49,6 +61,9 @@ export function make ({TypeClass, backing}: Realm): TypeClass<Primitive> {
           return primitive.cast(input);
         },
         prototype: Primitive.prototype,
+        equal (valueA: any, valueB: any): boolean {
+          return valueA === valueB;
+        },
         compareValues (valueA: any, valueB: any): int8 {
           if (valueA === valueB) {
             return 0;

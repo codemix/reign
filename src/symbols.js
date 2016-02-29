@@ -1,5 +1,8 @@
 /** @flow */
 
+// Accessors
+export const $StringPool = Symbol('%StringPool');
+
 // Properties
 export const $Backing = Symbol('%Backing');
 export const $Address = Symbol('%Address');

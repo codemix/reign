@@ -8,6 +8,7 @@ import {
   createToJSON,
   createStructDestructor,
   createClearStruct,
+  createEqual,
   createCompareValues,
   createCompareAddresses,
   createCompareAddressValue,
@@ -16,8 +17,6 @@ import {
 } from "./methods";
 
 import type {Realm} from "../../";
-
-import type {$isType} from "../";
 
 type StructFieldsConfigObject = {
   [name: string]: Type<any>|PartialType<any>;
@@ -41,12 +40,24 @@ import {
 
 export class Struct extends TypedObject {}
 
-export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm): TypeClass<Struct> {
+export function make (realm: Realm): TypeClass<Struct> {
+  const {TypeClass, ReferenceType, backing} = realm;
   return new TypeClass('StructType', (name: string, fields: ?StructFieldsConfig, options: ?StructOptions) => {
     return (Partial: Function) => {
 
       Partial[$CanBeEmbedded] = true;
       Partial[$CanBeReferenced] = true;
+      let StructArray;
+      Object.defineProperties(Partial, {
+        Array: {
+          get () {
+            if (StructArray === undefined) {
+              StructArray = new realm.ArrayType(Partial);
+            }
+            return StructArray;
+          }
+        }
+      });
 
       const prototype = Object.create(Struct.prototype);
 
@@ -79,8 +90,8 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
           this[$Address] = address;
         }
         else {
-          this[$Backing] = defaultBacking;
-          this[$Address] = createStruct(defaultBacking, backingOrInput);
+          this[$Backing] = backing;
+          this[$Address] = createStruct(backing, backingOrInput);
         }
       }
 
@@ -158,6 +169,9 @@ export function make ({TypeClass, ReferenceType, backing: defaultBacking}: Realm
           },
           destructor: {
             value: createStructDestructor(fields)
+          },
+          equal: {
+            value: createEqual(fields)
           },
           compareValues: {
             value: createCompareValues(fields)

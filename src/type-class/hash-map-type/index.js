@@ -26,7 +26,7 @@ export class HashMap<K, V> extends TypedObject {
    * Return the size of the hash map.
    */
   get size (): uint32 {
-    return this[$Backing].getUint32(this[$Address] + 8);
+    return this[$Backing].getUint32(this[$Address] + CARDINALITY_OFFSET);
   }
 
   /**
@@ -50,6 +50,14 @@ export class HashMap<K, V> extends TypedObject {
     return false;
   }
 
+  /**
+   * Deletes a key from the hash map.
+   * Returns `true` if the given key was deleted, otherwise `false`.
+   */
+  delete (key: K): boolean {
+    return false;
+  }
+
 }
 
 const HEADER_SIZE = 16;
@@ -63,8 +71,9 @@ const INITIAL_BUCKET_COUNT = 16;
 /**
  * Makes a HashMapType type class for the given realm.
  */
-export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm): TypeClass<HashMap<any, any>> {
-  return new TypeClass('HashMapType', (KeyType: Type<any>, ValueType: Type<any>): (Partial: Function) => Object => {
+export function make (realm: Realm): TypeClass<HashMap<any, any>> {
+  const {TypeClass, StructType, ReferenceType, T, backing} = realm;
+  return new TypeClass('HashMapType', (KeyType: Type<any>, ValueType: Type<any>): Function => {
     return (Partial: Function) => {
       const canContainReferences = KeyType[$CanContainReferences] || ValueType[$CanContainReferences];
       Partial[$CanBeEmbedded] = true;
@@ -106,8 +115,7 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
       const KEY_OFFSET = Bucket.fieldOffsets.key;
       const VALUE_OFFSET = Bucket.fieldOffsets.value;
 
-
-      const BUCKET_SIZE = Bucket.byteLength;
+      const BUCKET_SIZE = alignTo(Bucket.byteLength, Bucket.byteAlignment);
 
       function getBucketHash (backing: Backing, bucketAddress: float64): uint32 {
         return backing.getUint32(bucketAddress);
@@ -118,7 +126,7 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
       }
 
       function getBucketKey (backing: Backing, bucketAddress: float64): any {
-        return KeyType.load(heap, bucketAddress + KEY_OFFSET);
+        return KeyType.load(backing, bucketAddress + KEY_OFFSET);
       }
 
       function setBucketKey (backing: Backing, bucketAddress: float64, value: any) {
@@ -180,7 +188,7 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
        * handle at least the given number of entries. Note that specifying this
        * argument does not actually write the cardinality value.
        */
-      function createEmptyHashMap (backing: Backing, address: float64, initialCardinalityHint: uint32 = 0): float64 {
+      function createEmptyHashMap (backing: Backing, header: float64, initialCardinalityHint: uint32 = 0): float64 {
         let initialSize;
         if ((initialCardinalityHint * 2) < INITIAL_BUCKET_COUNT) {
            initialSize = INITIAL_BUCKET_COUNT;
@@ -189,34 +197,48 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
           initialSize = initialCardinalityHint * 2;
         }
         const body = backing.calloc(initialSize * Bucket.byteLength);
-        setArrayAddress(backing, address, body);
-        setArrayLength(backing, address, initialSize);
-        return address;
+        setArrayAddress(backing, header, body);
+        setArrayLength(backing, header, initialSize);
+        return header;
       }
 
       /**
        * Create a hashmap from an array of key / values.
        */
-      function createHashMapFromArray (backing: Backing, address: float64, input: Array<[KeyType, ValueType]>): float64 {
+      function createHashMapFromArray (backing: Backing, header: float64, input: Array<[KeyType, ValueType]>): float64 {
         const length = input.length;
-        createEmptyHashMap(backing, address, length);
+        createEmptyHashMap(backing, header, length);
         for (let i = 0; i < length; i++) {
           const [key, value] = input[i];
+          const hash: uint32 = KeyType.hashValue(key);
+          setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
         }
       }
 
       /**
        * Create a hashmap from an iterable.
        */
-      function createHashMapFromIterable (backing: Backing, address: float64, input: Iterable<[KeyType, ValueType]>): float64 {
-
+      function createHashMapFromIterable (backing: Backing, header: float64, input: Iterable<[KeyType, ValueType]>): float64 {
+        createEmptyHashMap(backing, header);
+        for (const [key, value] of input) {
+          const hash: uint32 = KeyType.hashValue(key);
+          setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
+        }
       }
 
       /**
        * Create a hashmap from an object.
        */
-      function createHashMapFromObject (backing: Backing, address: float64, input: Object): float64 {
-
+      function createHashMapFromObject (backing: Backing, header: float64, input: Object): float64 {
+        const keys = Object.keys(input);
+        const length = keys.length;
+        createEmptyHashMap(backing, header, length);
+        for (let i = 0; i < length; i++) {
+          const key = keys[i];
+          const value = input[key];
+          const hash: uint32 = KeyType.hashValue(key);
+          setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
+        }
       }
 
       /**
@@ -268,7 +290,7 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
         setCardinality(backing, header, cardinality);
         if (cardinality + (cardinality >> 2) >= bucketArrayLength) {
           trace: `Growing the hash map because we reached >= 80% occupancy.`;
-          resize(backing, header);
+          grow(backing, header);
           return probe(backing, header, key, hash);
         }
         else {
@@ -328,17 +350,19 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
         return true;
       }
 
-      function resize (backing: Backing, header: float64): void {
+      /**
+       * Grow the backing array to twice its current capacity.
+       */
+      function grow (backing: Backing, header: float64): void {
         const bucketArrayLength = getArrayLength(backing, header);
         const bucketArrayAddress = getArrayAddress(backing, header);
         const cardinality = getCardinality(backing, header);
 
-        const newBuckets = new BucketArray();
+        const newBuckets = backing.alloc(bucketArrayLength * 2 * BUCKET_SIZE);
+        setArrayAddress(backing, header, newBuckets);
+        setArrayLength(backing, header, bucketArrayLength * 2);
 
-        hashmap.bucketArrayAddress = newBuckets[$address];
-        hashmap.bucketArrayLength = newBuckets.length;
-        hashmap.size = 1;
-
+        setCardinality(backing, header, 1);
 
         for (let index = 0; index < bucketArrayLength; index++) {
           const oldAddress = bucketArrayAddress + (index * BUCKET_SIZE);
@@ -350,20 +374,83 @@ export function make ({TypeClass, StructType, ReferenceType, T, backing}: Realm)
           }
         }
 
-        hashmap.size = size;
+        setCardinality(backing, header, cardinality);
 
         backing.free(bucketArrayAddress);
       }
 
-      const prototype = Object.create(HashMap.prototype);
+      const prototype = Object.create(HashMap.prototype, {
+        /**
+         * Get the value associated with the given key, otherwise undefined.
+         */
+        get: {
+          value (key: KeyType): ?ValueType {
+            const hash: uint32 = KeyType.hashValue(key);
+            const backing: Backing = this[$Backing];
+            const address: float64 = lookup(backing, this[$Address] , key, hash);
+            if (address === 0) {
+              return undefined;
+            }
+            else {
+              return getBucketValue(backing, address);
+            }
+          }
+        },
+
+        /**
+         * Set the value associated with the given key.
+         */
+        set: {
+          value (key: KeyType, value: ValueType): HashMap<KeyType, ValueType> {
+            const hash: uint32 = KeyType.hashValue(key);
+            const backing: Backing = this[$Backing];
+            const address: float64 = lookupOrInsert(backing, this[$Address], key, hash);
+            setBucketValue(backing, address, value);
+            return this;
+          }
+        },
+
+        /**
+         * Determine whether the hash map contains the given key or not.
+         */
+        has: {
+          value (key: KeyType): boolean {
+            const hash: uint32 = KeyType.hashValue(key);
+            return lookup(this[$Backing], this[$Address], key, hash) !== 0;
+          }
+        },
+        /**
+         * Deletes a key from the hash map.
+         * Returns `true` if the given key was deleted, otherwise `false`.
+         */
+        delete: {
+          value (key: any): boolean {
+            const hash: uint32 = KeyType.hashValue(key);
+            return remove(this[$Backing], this[$Address], key, hash);
+          }
+        }
+
+
+      });
 
 
 
       return {
         name,
+        byteLength: HEADER_SIZE,
+        byteAlignment: 8,
         constructor,
         prototype
       };
     };
   });
+}
+
+
+/**
+ * Ensure that the given value is aligned to the given number of bytes.
+ */
+export function alignTo (value: number, numberOfBytes: number): number {
+  const rem = value % numberOfBytes;
+  return rem === 0 ? value : value + (numberOfBytes - rem);
 }

@@ -15,8 +15,8 @@ import {
 /**
  * Makes a ReferenceType type class for the given realm.
  */
-export function make ({TypeClass}: Realm): TypeClass<any> {
-
+export function make (realm: Realm): TypeClass<any> {
+  const {TypeClass} = realm;
   return new TypeClass('ReferenceType', (name: string, Type: Function): Function => {
 
     return (Reference: Function): Object => {
@@ -29,6 +29,17 @@ export function make ({TypeClass}: Realm): TypeClass<any> {
         throw new TypeError(`Type ${Type.name} cannot be referenced.`);
       }
 
+      let ReferenceArray;
+      Object.defineProperties(Reference, {
+        Array: {
+          get () {
+            if (ReferenceArray === undefined) {
+              ReferenceArray = new realm.ArrayType(Reference);
+            }
+            return ReferenceArray;
+          }
+        }
+      });
       /**
        * Store a reference to the given object at the given address.
        */

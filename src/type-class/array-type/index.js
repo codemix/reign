@@ -171,14 +171,25 @@ function ensureSlots (min: uint32) {
 /**
  * Makes a TypedArray type class for a given realm.
  */
-export function make ({TypeClass, ReferenceType, backing}: Realm): TypeClass<TypedArray> {
+export function make (realm: Realm): TypeClass<TypedArray> {
+  const {TypeClass, ReferenceType, backing} = realm;
   return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
     return (Partial: Type<any>): Object => {
       const canContainReferences = ElementType[$CanContainReferences];
       Partial[$CanBeEmbedded] = true;
       Partial[$CanBeReferenced] = true;
       Partial[$CanContainReferences] = canContainReferences;
-
+      let MultidimensionalArray;
+      Object.defineProperties(Partial, {
+        Array: {
+          get () {
+            if (MultidimensionalArray === undefined) {
+              MultidimensionalArray = new realm.ArrayType(Partial);
+            }
+            return MultidimensionalArray;
+          }
+        }
+      });
       const name = (typeof config.name === 'string' && config.name.length)
                     ? config.name
                     : `Array<${ElementType.name}>`;

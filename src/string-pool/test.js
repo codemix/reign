@@ -1,5 +1,5 @@
 import {$StringPool} from '../symbols';
-describeRealm.only('StringPool', function (options) {
+describeRealm('StringPool', function (options) {
   let realm;
   let pool;
   let backing;
@@ -37,6 +37,12 @@ describeRealm.only('StringPool', function (options) {
       });
     });
 
+    it('should have set the reference count to 2 for all the addresses', function () {
+      addresses.forEach(address => {
+        backing.gc.refCount(address).should.equal(2);
+      });
+    });
+
     it('should have the right length', function () {
       addresses.length.should.equal(length);
     });
@@ -56,20 +62,45 @@ describeRealm.only('StringPool', function (options) {
 
   describe('Benchmarks', function () {
     const length = 1024;
-    let input;
+    let asciiInput, multiInput;
     let addresses;
     before(() => {
-      if (typeof gc === 'function') {
-        gc();
-      }
-      input = Array.from({length}, (_, index) => `string ${index}.`);
+      asciiInput = Array.from({length}, (_, index) => `string ${index}.`);
+      asciiInput.forEach(item => pool.add(item));
+      multiInput = Array.from({length}, (_, index) => `☃☃☃☃☃☃ ${index}.`);
+      multiInput.forEach(item => pool.add(item));
     });
 
+
+
     benchmark('Add strings', 100000, {
-      default (index) {
-        return pool.add(`String ${index}`);
+      ascii (index) {
+        return pool.add(`Test ${index % 50000}`);
+      },
+      multibyte (index) {
+        return pool.add(`☃☃☃☃ ${index % 50000}`)
       }
     });
+
+    benchmark('Remove strings', 100000, {
+      ascii (index) {
+        return pool.remove(`Test ${index % 50000}`);
+      },
+      multibyte (index) {
+        return pool.remove(`☃☃☃☃ ${index % 50000}`)
+      }
+    });
+
+
+    benchmark('Add pre-existing strings', 100000, {
+      ascii (index) {
+        return pool.add(asciiInput[index % length]);
+      },
+      multibyte (index) {
+        return pool.add(multiInput[index % length]);
+      }
+    });
+
   });
 
 });

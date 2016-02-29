@@ -1,4 +1,4 @@
-describeRealm('Builtin: String', function (options) {
+describeRealm('Builtin: InternedString', function (options) {
   let realm;
   let backing;
   let T;
@@ -8,7 +8,7 @@ describeRealm('Builtin: String', function (options) {
     realm = options.realm;
     backing = realm.backing;
     T = realm.T;
-    address = backing.alloc(T.String.byteLength);
+    address = backing.alloc(T.InternedString.byteLength);
   });
 
   after(() => {
@@ -17,83 +17,81 @@ describeRealm('Builtin: String', function (options) {
 
   describe('Cast', function () {
     it('should return an empty value for empty input', function () {
-      T.String().should.equal('');
+      T.InternedString().should.equal('');
     });
 
   });
 
   it('should not create a new instance', function () {
-    (() => new T.String('wat')).should.throw(TypeError);
+    (() => new T.InternedString('wat')).should.throw(TypeError);
   });
 
   describe('.emptyValue()', function () {
     it('should return an empty value', function () {
-      T.String.emptyValue().should.equal('');
+      T.InternedString.emptyValue().should.equal('');
     });
   });
 
   describe('.randomValue()', function () {
     it('should return a random value', function () {
-      const value = T.String.randomValue();
+      const value = T.InternedString.randomValue();
       (typeof value).should.equal('string');
     });
 
     it('should accept a random value', function () {
-      T.String.accepts(T.String.randomValue()).should.equal(true);
+      T.InternedString.accepts(T.InternedString.randomValue()).should.equal(true);
     });
   });
 
   describe('.initialize(), .store(), .load() and .clear()', function () {
     let input;
     before(() => {
-      input = T.String.randomValue();
+      input = T.InternedString.randomValue();
     });
 
     it('should initialize an address', function () {
-      T.String.initialize(backing, address);
+      T.InternedString.initialize(backing, address);
     });
 
     it('should load an empty value from a just-initialized address', function () {
-      T.String.load(backing, address).should.equal(T.String.emptyValue());
+      T.InternedString.load(backing, address).should.equal(T.InternedString.emptyValue());
     });
 
     it('should store a value at an address', function () {
-      T.String.store(backing, address, input);
+      T.InternedString.store(backing, address, input);
     });
 
     it('should load a value from an address', function () {
-      T.String.load(backing, address).should.equal(input);
+      T.InternedString.load(backing, address).should.equal(input);
     });
 
     it('should clear a value from an address', function () {
-      T.String.clear(backing, address);
+      T.InternedString.clear(backing, address);
     });
 
     it('should load an empty value from a cleaned up address', function () {
-      (T.String.load(backing, address) === T.String.emptyValue()).should.equal(true);
+      (T.InternedString.load(backing, address) === T.InternedString.emptyValue()).should.equal(true);
     });
   });
 
   describe('.hashValue()', function () {
     it('should hash a value', function () {
-      T.String.hashValue(123).should.be.above(-1);
+      T.InternedString.hashValue('abc').should.be.above(-1);
     });
 
     it('should hash a random value', function () {
-      T.String.hashValue(T.String.randomValue()).should.be.above(-1);
+      T.InternedString.hashValue(T.InternedString.randomValue()).should.be.above(-1);
     });
 
     it('should hash an empty value', function () {
-      T.String.hashValue(T.String.emptyValue()).should.be.above(-1);
+      T.InternedString.hashValue(T.InternedString.emptyValue()).should.be.above(-1);
     });
-
   });
-
 
   describe('.Array', function () {
     let array;
     it('should create an array of items', function () {
-      array = new T.String.Array(4);
+      array = new T.InternedString.Array(4);
     });
 
     it('should have the right length', function () {
@@ -151,7 +149,7 @@ describeRealm('Builtin: String', function (options) {
     });
 
     it('should create an array of items from a list of strings', function () {
-      array = new T.String.Array([
+      array = new T.InternedString.Array([
         'foo',
         'bar',
         'qux',

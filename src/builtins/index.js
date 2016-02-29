@@ -16,6 +16,7 @@ import {make as makeFloat64} from "./float64";
 
 import {make as makeBoolean} from "./boolean";
 import {make as makeString} from "./string";
+import {make as makeInternedString} from "./interned-string";
 
 
 export function registerBuiltins (realm: Realm): TypeRegistry {
@@ -33,6 +34,7 @@ export function registerBuiltins (realm: Realm): TypeRegistry {
   //registry.add(makeNumber(realm, 9));
   registry.add(makeBoolean(realm, 10));
   registry.add(makeString(realm, 11));
+  registry.add(makeInternedString(realm, 12));
 
   return registry;
 }

@@ -16,6 +16,7 @@ export type StringPool = {
   pointerArrayLength: uint32;
   pointerArrayAddress: float64;
   makeStringType (name: string, id: uint32): Type<string>;
+  makeInternedStringType (name: string, id: uint32): Type<string>;
   hash (input: string): uint32;
   get (input: string): float64;
   add (input: string): float64;
@@ -28,7 +29,7 @@ const ARRAY_POINTER_OFFSET = 0;
 const ARRAY_LENGTH_OFFSET = 8;
 const CARDINALITY_OFFSET = 12;
 
-const INITIAL_BUCKET_COUNT = 64;
+const INITIAL_BUCKET_COUNT = 4096;
 
 const TYPE_ASCII = 'TYPE_ASCII';
 const TYPE_CHAR_ARRAY = 'TYPE_CHAR_ARRAY';
@@ -40,26 +41,6 @@ const STRING_DATA_OFFSET = STRING_HEADER_SIZE;
 
 type PossibleTypes = 'TYPE_ASCII'|'TYPE_CHAR_ARRAY';
 
-
-/**
- * Strings are length-and-hash-prefixed arrays of characters.
- * If the string is ascii compatible, each character is a Uint8 occupying a single byte.
- * If the string contains non-ascii characters, each character in the string is a Uint16, occupying two bytes.
- * To determine which type of string we're dealing with, we store a negative length for Uint16 arrays and a positive length for Uint8 arrays.
- * The length always refers to the array length and therefore the number of characters, rather than the number of bytes.
- *
- * Strings layout:
- *
- *    ---------------------------------------------
- *    |             Length: Int32                 | (If length is negative, the string is a Uint16 array.)
- *    ---------------------------------------------
- *    |               Hash: Uint32                |
- *    ---------------------------------------------
- *    |   Data: Uint8[](Length)|Uint16[](Length)  |
- *    ---------------------------------------------
- *
- *
- */
 
 export function make (realm: Realm, poolPointerAddress: float64): StringPool {
 
@@ -76,13 +57,6 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
       }
       this[$Backing] = input;
       this[$Address] = address;
-    }
-
-    /**
-     * Make a string type which uses this pool.
-     */
-    makeStringType (name: string, id: uint32 = 0): Type<string> {
-      return makeStringType(this, name, id);
     }
 
     /**
@@ -125,13 +99,14 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
      * Remove the given string from the pool *if* its reference count is 1,
      * otherwise decrement the reference count by one.
      *
-     * Warning: Attempting to remove a string which does not exist in the pool throws
-     * a `ReferenceError` because such cases invariably mean some sort of memory mismanagement bug.
-     *
      * Returns `true` if the string was actually removed, otherwise `false`.
      */
     remove (input: string): boolean {
       return removeString(this[$Backing], this[$Address], input);
+    }
+
+    removeStringByPointer (pointerAddress: float64): boolean {
+      return removeStringByPointer(this[$Backing], this[$Address], pointerAddress);
     }
 
     /**
@@ -191,71 +166,6 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     backing.setUint32(address + CARDINALITY_OFFSET, value);
   }
 
-  function makeStringType (pool: StringPool, name: string, id: uint32): Type<string> {
-    trace: `Making interned string type.`;
-    const TString = StringType(name, {
-      id,
-      byteLength: 8, // Pointer
-      byteAlignment: 8,
-      constructor (input) {
-        if (this instanceof TString) {
-          throw new TypeError(`String is not a constructor.`);
-        }
-        else {
-          return input == null ? '' : ''+input;
-        }
-      },
-      cast (input: any): string {
-        return input == null ? '' : ''+input;
-      },
-      accepts (input: any): boolean {
-        return typeof input === 'string';
-      },
-      initialize (backing: Backing, pointerAddress: float64, initialInput?: string): void {
-        if (!initialInput) {
-          backing.setFloat64(pointerAddress, 0);
-        }
-        else {
-          backing.setFloat64(pointerAddress, pool.add(initialInput));
-        }
-      },
-      store (backing: Backing, pointerAddress: float64, input: string): void {
-        const existing: float64 = backing.getFloat64(pointerAddress);
-        if (!input) {
-          if (existing !== 0) {
-            removeStringByAddress(pool[$Backing], pool[$Address], existing);
-            backing.setFloat64(pointerAddress, 0);
-          }
-        }
-        else {
-          const address: float64 = pool.add(input);
-          if (address !== existing) {
-            if (existing !== 0) {
-              removeStringByAddress(pool[$Backing], pool[$Address], existing);
-            }
-            backing.setFloat64(pointerAddress, address);
-          }
-        }
-      },
-      load (backing: Backing, address: float64): string {
-        return getString(backing, backing.getFloat64(address));
-      },
-      clear (backing: Backing, address: float64): string {
-        removeStringByAddress(pool[$Backing], pool[$Address], address);
-        backing.setFloat64(address, 0);
-      },
-      randomValue (): string {
-        return Math.random() > 0.7 ? randomMultiByteString() : randomAsciiString();
-      },
-      emptyValue (): string {
-        return '';
-      },
-      hashValue: hashString
-    });
-
-    return TString;
-  }
-
   /**
    * Read the hash for the given string.
    */
@@ -308,9 +218,6 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
    * Check that the string stored at the given address matches the given input + hash.
    */
   function checkEqual (backing: Backing, address: float64, input: string, hash: uint32, allAscii: boolean): boolean {
-    if (Math.floor(address) !== address) {
-      console.trace(`Checking address ${address} vs ${input} (${hash}).`);
-    }
     assert: Math.floor(address) === address;
     trace: `Checking address ${address} vs ${input} (${hash}).`;
     if (getStringHash(backing, address) !== hash) {
@@ -383,6 +290,27 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
   }
   forceInline(createString);
 
+  /**
+   * Store the given raw string and return the address.
+   * The string will NOT be interned.
+   */
+  function createRawString (backing: Backing, input: string): float64 {
+    let hash = 0x811c9dc5;
+    let allAscii = true;
+    const length = input.length;
+    for (let i = 0; i < length; i++) {
+      const code: uint16 = input.charCodeAt(i);
+      if (code > 127) {
+        allAscii = false;
+      }
+      hash ^= code;
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    hash = hash >>> 0;
+    trace: `Got hash ${hash} for ${allAscii ? 'ascii' : 'multi-byte'} string of ${length} characters.`;
+    return storeString(backing, input, hash, allAscii);
+  }
+  forceInline(createRawString);
 
   /**
    * Returns the hash for the given string.
@@ -407,7 +335,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     const arena = backing.arenaFor(pointerArrayAddress);
     const float64Array = arena.float64Array;
     assert: float64Array.length > 0;
-    const startOffset = pointerArrayAddress >> 3;
+    const startOffset = backing.offsetFor(pointerArrayAddress) >> 3;
 
     let index = (hash & (pointerArrayLength - 1));
     let offset = startOffset + index;
@@ -419,7 +347,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
       }
       offset = startOffset + index;
     }
-    return offset << 3;
+    return arena.startAddress + (offset << 3);
   }
   forceInline(probe);
 
@@ -435,7 +363,6 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
    * Find the address of the string for the given input + hash, or create it if it does not exist.
    */
   function lookupOrInsertString (backing: Backing, poolAddress: float64, input: string, hash: uint32, allAscii: boolean): float64 {
-    const pointerArrayLength = getArrayLength(backing, poolAddress);
     const pointerAddress: float64 = probe(backing, poolAddress, input, hash, allAscii);
     let address: float64 = backing.getFloat64(pointerAddress);
     if (address !== 0) {
@@ -453,6 +380,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     const size = getCardinality(backing, poolAddress) + 1;
     setCardinality(backing, poolAddress, size);
 
+    const pointerArrayLength = getArrayLength(backing, poolAddress);
     if (size + (size >> 2) >= pointerArrayLength) {
       trace: `Growing the hash map because we reached >= 80% occupancy.`;
       resize(backing, poolAddress);
@@ -510,7 +438,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
    */
   function removeString (backing: Backing, poolAddress: float64, input: string, hash: uint32): boolean {
     let p: float64 = probe(backing, poolAddress, input, hash);
-    return removeStringByAddress(backing, poolAddress, p);
+    return removeStringByPointer(backing, poolAddress, p);
   }
   forceInline(removeString);
 
@@ -518,7 +446,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
   /**
    * Remove the string at the given address from the hash map.
    */
-  function removeStringByAddress (backing: Backing, poolAddress: float64, p: float64): boolean {
+  function removeStringByPointer (backing: Backing, poolAddress: float64, p: float64): boolean {
     const address = backing.getFloat64(p);
 
     if (address === 0) {
@@ -571,7 +499,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     setCardinality(backing, poolAddress, getCardinality(backing, poolAddress) - 1);
     return true;
   }
-  forceInline(removeStringByAddress);
+  forceInline(removeStringByPointer);
 
   function resize (backing: Backing, poolAddress: float64): void {
     const pointerArrayLength = getArrayLength(backing, poolAddress);

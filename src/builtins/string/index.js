@@ -6,8 +6,6 @@ import randomString from "../../random/string";
 import type Backing from "backing";
 import type {Realm} from "../..";
 
-import {$StringPool} from "../../symbols";
-
 export const STRING_LENGTH_OFFSET = 0;
 export const STRING_HASH_OFFSET = 4;
 export const STRING_HEADER_SIZE = 8;
@@ -34,7 +32,7 @@ export const STRING_DATA_OFFSET = STRING_HEADER_SIZE;
  *
  *
  */
-export function make (realm: Realm, typeId: uint32): Type<string> {
+export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
   const {StringType} = realm;
   const RawString = new StringType('String', {
     id: typeId,
@@ -83,7 +81,7 @@ export function make (realm: Realm, typeId: uint32): Type<string> {
     load (backing: Backing, address: float64): string {
       return getString(backing, backing.getFloat64(address));
     },
-    clear (backing: Backing, address: float64): string {
+    clear (backing: Backing, address: float64): void {
       const existing: float64 = backing.getFloat64(address);
       if (existing !== 0) {
         backing.gc.unref(existing);
@@ -258,3 +256,12 @@ function getString (backing: Backing, address: float64): string {
   }
 }
 forceInline(getString);
+
+
+/**
+ * Read the hash for the given string.
+ */
+function getStringHash (backing: Backing, address: float64): uint32 {
+  return backing.getUint32(address + STRING_HASH_OFFSET);
+}
+forceInline(getStringHash);

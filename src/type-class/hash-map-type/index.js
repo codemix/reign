@@ -26,6 +26,7 @@ export class HashMap<K, V> extends TypedObject {
    * Return the size of the hash map.
    */
   get size (): uint32 {
+    // @flowIssue 252
     return this[$Backing].getUint32(this[$Address] + CARDINALITY_OFFSET);
   }
 
@@ -71,10 +72,11 @@ const INITIAL_BUCKET_COUNT = 16;
 /**
  * Makes a HashMapType type class for the given realm.
  */
-export function make (realm: Realm): TypeClass<HashMap<any, any>> {
+export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
   const {TypeClass, StructType, ReferenceType, T, backing} = realm;
-  return new TypeClass('HashMapType', (KeyType: Type<any>, ValueType: Type<any>): Function => {
+  return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type): Function => {
     return (Partial: Function) => {
+      // @flowIssue 252
       const canContainReferences = KeyType[$CanContainReferences] || ValueType[$CanContainReferences];
       Partial[$CanBeEmbedded] = true;
       Partial[$CanBeReferenced] = true;
@@ -158,7 +160,7 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
       /**
        * Create a new hash map from the given input and return its address.
        */
-      function createHashMap (backing: Backing, input: ?Map|HashMap|Array<[KeyType, ValueType]>|Object): float64 {
+      function createHashMap (backing: Backing, input: ?Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object): float64 {
 
         // Allocate space for the header.
         const address = backing.gc.calloc(HEADER_SIZE);
@@ -205,12 +207,12 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
       /**
        * Create a hashmap from an array of key / values.
        */
-      function createHashMapFromArray (backing: Backing, header: float64, input: Array<[KeyType, ValueType]>): float64 {
+      function createHashMapFromArray (backing: Backing, header: float64, input: Array<[KeyType, ValueType]>): void {
         const length = input.length;
         createEmptyHashMap(backing, header, length);
         for (let i = 0; i < length; i++) {
           const [key, value] = input[i];
-          const hash: uint32 = KeyType.hashValue(key);
+          const hash: uint32 = KeyType.hashValue((key: any));
           setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
         }
       }
@@ -218,10 +220,10 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
       /**
        * Create a hashmap from an iterable.
        */
-      function createHashMapFromIterable (backing: Backing, header: float64, input: Iterable<[KeyType, ValueType]>): float64 {
+      function createHashMapFromIterable (backing: Backing, header: float64, input: Iterable<[KeyType, ValueType]>): void {
         createEmptyHashMap(backing, header);
         for (const [key, value] of input) {
-          const hash: uint32 = KeyType.hashValue(key);
+          const hash: uint32 = KeyType.hashValue((key: any));
           setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
         }
       }
@@ -229,14 +231,14 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
       /**
        * Create a hashmap from an object.
        */
-      function createHashMapFromObject (backing: Backing, header: float64, input: Object): float64 {
+      function createHashMapFromObject (backing: Backing, header: float64, input: Object): void {
         const keys = Object.keys(input);
         const length = keys.length;
         createEmptyHashMap(backing, header, length);
         for (let i = 0; i < length; i++) {
           const key = keys[i];
           const value = input[key];
-          const hash: uint32 = KeyType.hashValue(key);
+          const hash: uint32 = KeyType.hashValue((key: any));
           setBucketValue(backing, lookupOrInsert(backing, header, key, hash), value);
         }
       }
@@ -385,7 +387,7 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
          */
         get: {
           value (key: KeyType): ?ValueType {
-            const hash: uint32 = KeyType.hashValue(key);
+            const hash: uint32 = KeyType.hashValue((key: any));
             const backing: Backing = this[$Backing];
             const address: float64 = lookup(backing, this[$Address] , key, hash);
             if (address === 0) {
@@ -402,7 +404,7 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
          */
         set: {
           value (key: KeyType, value: ValueType): HashMap<KeyType, ValueType> {
-            const hash: uint32 = KeyType.hashValue(key);
+            const hash: uint32 = KeyType.hashValue((key: any));
             const backing: Backing = this[$Backing];
             const address: float64 = lookupOrInsert(backing, this[$Address], key, hash);
             setBucketValue(backing, address, value);
@@ -415,7 +417,7 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
          */
         has: {
           value (key: KeyType): boolean {
-            const hash: uint32 = KeyType.hashValue(key);
+            const hash: uint32 = KeyType.hashValue((key: any));
             return lookup(this[$Backing], this[$Address], key, hash) !== 0;
           }
         },
@@ -425,7 +427,7 @@ export function make (realm: Realm): TypeClass<HashMap<any, any>> {
          */
         delete: {
           value (key: any): boolean {
-            const hash: uint32 = KeyType.hashValue(key);
+            const hash: uint32 = KeyType.hashValue((key: any));
             return remove(this[$Backing], this[$Address], key, hash);
           }
         }

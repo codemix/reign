@@ -138,7 +138,10 @@ export function createClearStruct (fields: StructField<any>[]): ?(backing: Backi
  * Create a function which can destroy the given struct fields.
  */
 export function createStructDestructor (fields: StructField<any>[]): ?(backing: Backing, address: float64) => void {
-  const destructible = fields.filter(({type}) => type[$CanContainReferences] && typeof type.destructor === 'function');
+  const destructible = fields.filter(({type}) => {
+    /* @flowIssue 252 */
+    return type[$CanContainReferences] && typeof type.destructor === 'function'
+  });
   const destructors = destructible.map(field => field.type.destructor);
   const names = destructible.map((_, index) => `destructor_${index}`);
   const body = `

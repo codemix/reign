@@ -1,4 +1,3 @@
-import {$StringPool} from '../symbols';
 describeRealm('StringPool', function (options) {
   let realm;
   let pool;
@@ -9,7 +8,7 @@ describeRealm('StringPool', function (options) {
     realm = options.realm;
     backing = realm.backing;
     T = realm.T;
-    pool = realm[$StringPool];
+    pool = realm.strings;
   });
 
 

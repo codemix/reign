@@ -15,7 +15,7 @@ import {
 /**
  * Makes a ReferenceType type class for the given realm.
  */
-export function make (realm: Realm): TypeClass<any> {
+export function make (realm: Realm): TypeClass<ReferenceType<any>> {
   const {TypeClass} = realm;
   return new TypeClass('ReferenceType', (name: string, Type: Function): Function => {
 
@@ -30,6 +30,7 @@ export function make (realm: Realm): TypeClass<any> {
       }
 
       let ReferenceArray;
+      // @flowIssue 285
       Object.defineProperties(Reference, {
         Array: {
           get () {

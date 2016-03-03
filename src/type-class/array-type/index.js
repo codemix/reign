@@ -16,31 +16,38 @@ import {
   $SetElement
 } from "../../symbols";
 
-export type ForEachVisitor = (element: any, index: uint32, context: TypedArray) => void;
-export type MapVisitor = (element: any, index: uint32, context: TypedArray) => any;
-export type FilterVisitor = (element: any, index: uint32, context: TypedArray) => boolean;
+export type ForEachVisitor = (element: any, index: uint32, context: BaseArray) => void;
+export type MapVisitor = (element: any, index: uint32, context: BaseArray) => any;
+export type FilterVisitor = (element: any, index: uint32, context: BaseArray) => boolean;
+export type Reducer = (accumulator: any, element: any, index: uint32, context: BaseArray) => any;
 
-export class TypedArray extends TypedObject {
+export class BaseArray extends TypedObject {
+
+  BYTES_PER_ELEMENT: uint32;
 
   /**
    * Return the length of the array.
    */
   get length (): uint32 {
+    // @flowIssue 252
     return this[$Backing].getUint32(this[$Address] + 8);
   }
 
   /**
    * Visit every item in the typed array.
    */
-  forEach (visitor: ForEachVisitor): TypedArray {
+  forEach (visitor: ForEachVisitor): BaseArray {
+    // @flowIssue 252
     const ElementType = this[$ElementType];
+    // @flowIssue 252
     const backing = this[$Backing];
+    // @flowIssue 252
     const address = this[$Address];
     const length = backing.getUint32(address + 8);
     let current = backing.getFloat64(address);
     for (let i = 0; i < length; i++) {
       visitor(ElementType.load(backing, current), i, this);
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
     }
     return this;
   }
@@ -49,15 +56,18 @@ export class TypedArray extends TypedObject {
    * Map over every item in the typed array and return a new `Array` containing the result.
    */
   map (visitor: MapVisitor): Array<any> {
+    // @flowIssue 252
     const ElementType = this[$ElementType];
+    // @flowIssue 252
     const backing = this[$Backing];
+    // @flowIssue 252
     const address = this[$Address];
     const length = backing.getUint32(address + 8);
     const array = new Array(length);
     let current = backing.getFloat64(address);
     for (let i = 0; i < length; i++) {
       array[i] = visitor(ElementType.load(backing, current), i, this);
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
     }
     return array;
   }
@@ -66,8 +76,11 @@ export class TypedArray extends TypedObject {
    * Filter the items in the array and return a new array containing the results.
    */
   filter (filterer: FilterVisitor): Array<any> {
+    // @flowIssue 252
     const ElementType = this[$ElementType];
+    // @flowIssue 252
     const backing = this[$Backing];
+    // @flowIssue 252
     const address = this[$Address];
     const length = backing.getUint32(address + 8);
     const array = [];
@@ -77,7 +90,7 @@ export class TypedArray extends TypedObject {
       if (filterer(item, i, this)) {
         array.push(item);
       }
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
     }
     return array;
   }
@@ -87,8 +100,11 @@ export class TypedArray extends TypedObject {
    * (from left-to-right) to reduce it to a single value.
    */
   reduce (reducer: Reducer, initialValue?: any): any {
+    // @flowIssue 252
     const ElementType = this[$ElementType];
+    // @flowIssue 252
     const backing = this[$Backing];
+    // @flowIssue 252
     const address = this[$Address];
     const length = backing.getUint32(address + 8);
     if (length === 0) {
@@ -99,12 +115,12 @@ export class TypedArray extends TypedObject {
     let index = 0;
     if (initialValue === undefined) {
       initialValue = ElementType.load(backing, current);
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
       index = 1;
     }
     for (; index < length; index++) {
       result = reducer(initialValue, ElementType.load(backing, current), index, this);
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
     }
     return result;
   }
@@ -112,22 +128,26 @@ export class TypedArray extends TypedObject {
   /**
    * Return a representation of the array which can be encoded as JSON.
    */
-  toJSON () {
+  toJSON (): Array<any> {
+    // @flowIssue 252
     const ElementType = this[$ElementType];
+    // @flowIssue 252
     const backing = this[$Backing];
+    // @flowIssue 252
     const address = this[$Address];
     const length = backing.getUint32(address + 8);
     const array = new Array(length);
     let current = backing.getFloat64(address);
     for (let i = 0; i < length; i++) {
       array[i] = ElementType.load(backing, current);
-      current += ElementType.byteLength;
+      current += this.BYTES_PER_ELEMENT;
     }
     return array;
   }
 
   /**
    * Typed array iterator.
+   * @flowIssue 252
    */
   *[Symbol.iterator] () {
     const ElementType = this[$ElementType];
@@ -136,7 +156,7 @@ export class TypedArray extends TypedObject {
     const pointer = backing.getFloat64(address);
     const length = backing.getUint32(address + 8);
     for (let i = 0; i < length; i++) {
-      yield ElementType.load(backing, pointer + (i * ElementType.byteLength));
+      yield ElementType.load(backing, pointer + (i * this.BYTES_PER_ELEMENT));
     }
   }
 
@@ -156,7 +176,7 @@ function ensureSlots (min: uint32) {
   }
   const max = Math.max(min, definedSlotCount * 1.5) + 100;
   for (let index = definedSlotCount; index < max; index++) {
-    Object.defineProperty(TypedArray.prototype, index, {
+    Object.defineProperty(BaseArray.prototype, index, {
       get (): any {
         return this[$GetElement](index);
       },
@@ -171,23 +191,26 @@ function ensureSlots (min: uint32) {
 /**
  * Makes a TypedArray type class for a given realm.
  */
-export function make (realm: Realm): TypeClass<TypedArray> {
-  const {TypeClass, ReferenceType, backing} = realm;
+export function make (realm: Realm): TypeClass<ArrayType<any>> {
+  const {TypeClass, ReferenceType, backing, alignTo} = realm;
   return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
-    return (Partial: Type<any>): Object => {
+    return (Partial: Class<TypedArray<ElementType>>): Object => {
+      // @flowIssue 252
       const canContainReferences = ElementType[$CanContainReferences];
+      // @flowIssue 252
       Partial[$CanBeEmbedded] = true;
+      // @flowIssue 252
       Partial[$CanBeReferenced] = true;
+      // @flowIssue 252
       Partial[$CanContainReferences] = canContainReferences;
       let MultidimensionalArray;
-      Object.defineProperties(Partial, {
-        Array: {
-          get () {
-            if (MultidimensionalArray === undefined) {
-              MultidimensionalArray = new realm.ArrayType(Partial);
-            }
-            return MultidimensionalArray;
+      // @flowIssue 285
+      Object.defineProperty(Partial, 'Array', {
+        get (): any {
+          if (MultidimensionalArray === undefined) {
+            MultidimensionalArray = new realm.ArrayType(Partial);
           }
+          return MultidimensionalArray;
         }
       });
       const name = (typeof config.name === 'string' && config.name.length)
@@ -196,11 +219,14 @@ export function make (realm: Realm): TypeClass<TypedArray> {
 
       Partial.ref = new ReferenceType(`Reference<${name}>`, Partial);
 
-      const prototype = Object.create(TypedArray.prototype);
+      const prototype: Object = Object.create(BaseArray.prototype);
       prototype[$ElementType] = ElementType;
 
-      prototype.BYTES_PER_ELEMENT = ElementType.byteLength;
-      Partial.BYTES_PER_ELEMENT = ElementType.byteLength;
+      const BYTES_PER_ELEMENT = alignTo(ElementType.byteLength, ElementType.byteAlignment);
+
+      prototype.BYTES_PER_ELEMENT = BYTES_PER_ELEMENT;
+
+      Partial.BYTES_PER_ELEMENT = BYTES_PER_ELEMENT;
 
       /**
        * The constructor for array type instances.
@@ -441,7 +467,7 @@ export function make (realm: Realm): TypeClass<TypedArray> {
         const length = backing.getUint32(address + 8);
         let hash = 0x811c9dc5;
         for (let i = 0; i < length; i++) {
-          hash ^= ElementType.hashValue(ElementType.load(backing, current));
+          hash ^= ElementType.hashValue((ElementType.load(backing, current): any));
           hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
           current += ElementType.byteLength;
         }
@@ -503,7 +529,7 @@ export function make (realm: Realm): TypeClass<TypedArray> {
             }
           }
           if (pointer !== address + 16) {
-            // this was allocated using `TypedArray.store()`
+            // this was allocated using `BaseArray.store()`
             // so we need to reclaim the data segment separately
             backing.free(pointer);
           }
@@ -514,12 +540,21 @@ export function make (realm: Realm): TypeClass<TypedArray> {
           if (valueA === valueB) {
             return 0;
           }
-          else if (valueA > valueB) {
+          else if (valueA.length > valueB.length) {
             return 1;
           }
-          else {
+          else if (valueA.length < valueB.length) {
             return -1;
           }
+
+          const length = valueA.length;
+          for (let i = 0; i < length; i++) {
+            const result = ElementType.compareValues(valueA[i], valueB[i]);
+            if (result !== 0) {
+              return result;
+            }
+          }
+          return 0;
         },
         compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8 {
           if (addressA === addressB) {
@@ -532,29 +567,52 @@ export function make (realm: Realm): TypeClass<TypedArray> {
             return 1;
           }
 
-          const valueA = Partial.load(backing, addressA);
-          const valueB = Partial.load(backing, addressB);
-          if (valueA === valueB) {
-            return 0;
-          }
-          else if (valueA > valueB) {
+          const lengthA = backing.getUint32(addressA + 8);
+          const lengthB = backing.getUint32(addressB + 8);
+
+          if (lengthA > lengthB) {
             return 1;
           }
-          else {
+          else if (lengthB < lengthA) {
             return -1;
           }
+
+          let locA = backing.getFloat64(addressA);
+          let locB = backing.getFloat64(addressB);
+
+          for (let i = 0; i < lengthA; i++) {
+            const result: uint8 = ElementType.compareAddresses(backing, locA, locB);
+            if (result !== 0) {
+              return result;
+            }
+            locA += BYTES_PER_ELEMENT;
+            locB += BYTES_PER_ELEMENT;
+          }
+
+          return 0;
         },
         compareAddressValue (backing: Backing, address: float64, value: any): int8 {
-          const loaded = Partial.load(backing, address);
-          if (loaded === value) {
+          const length = backing.getUint32(address + 8);
+          if (length === 0 && value.length === 0) {
             return 0;
           }
-          else if (loaded > value) {
+          else if (length > value.length) {
             return 1;
           }
-          else {
+          else if (length < value.length) {
             return -1;
           }
+          let loc = backing.getFloat64(address);
+
+          for (let i = 0; i < length; i++) {
+            const result = ElementType.compareAddressValue(backing, loc, value[i]);
+            if (result !== 0) {
+              return result;
+            }
+            loc += BYTES_PER_ELEMENT;
+          }
+
+          return 0;
         },
         emptyValue (): Array<any> {
           return [];

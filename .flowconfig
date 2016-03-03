@@ -4,9 +4,16 @@
 .*/node_modules/babel.*
 .*/node_modules/babylon.*
 .*/node_modules/.*/src.*
+.*/node_modules/babel-plugin.*
+.*/node_modules/binary-extensions/.*
+.*/node_modules/url-regex/.*
+.*/node_modules/spdx.*
+.*/node_modules/builtin-modules.*
+.*/node_modules/resolve.*
+.*/test/.*json$
 
 # Ignore tests
-.*/node_modules/.*/test.*
+.*/node_modules/.*/test/.*
 
 [include]
 
@@ -30,4 +37,4 @@ esproposal.class_static_fields=enable
 unsafe.enable_getters_and_setters=true
 
 [version]
-0.21.0
+0.22.1

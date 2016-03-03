@@ -1,3 +1,5 @@
+/* @flow */
+
 export default function random (): string {
   return Math.random() > 0.7 ? multibyte() : ascii();
 }

@@ -11,11 +11,11 @@ import {make as makeStringPool} from "./string-pool";
 
 
 import {registerBuiltins} from "./builtins";
-import {$StringPool} from "./symbols";
 
 
 import type Backing from "backing";
 import type TypeRegistry from "type-registry";
+import type {StringPool} from "./string-pool";
 
 const HEADER_ADDRESS = 336; // First usable block in the backing store.
 const VERSION_ADDRESS = HEADER_ADDRESS;
@@ -26,12 +26,14 @@ const FIRST_ADDRESS = HEADER_ADDRESS + HEADER_SIZE;
 
 export class Realm {
 
-  TypeClass: Class<Type<any>>;
+  TypeClass: Class<TypeClass<Type>>;
 
-  PrimitiveType: Class<Type<any>>;
-  ReferenceType: Class<Type<any>>;
-  StructType: Class<Type<any>>;
-  ArrayType: Class<Type<any>>;
+  PrimitiveType: Class<TypeClass<PrimitiveType<any>>>;
+  ReferenceType: Class<TypeClass<ReferenceType<any>>>;
+  StructType: Class<TypeClass<StructType<Object>>>;
+  ArrayType: Class<TypeClass<ArrayType<any>>>;
+  StringType: Class<TypeClass<PrimitiveType<string>>>;
+  HashMapType: Class<TypeClass<HashMapType<any, any>>>;
 
   T: {
     [name: string|Symbol]: Type;
@@ -43,6 +45,7 @@ export class Realm {
 
   backing: Backing;
   registry: TypeRegistry;
+  strings: StringPool;
   isInitialized: boolean;
 
   constructor (backing: Backing) {
@@ -72,7 +75,8 @@ export class Realm {
       await this.backing.init();
     }
     verifyHeader(this);
-    this[$StringPool] = makeStringPool(this, STRING_POOL_POINTER_ADDRESS);
+
+    this.strings = makeStringPool(this, STRING_POOL_POINTER_ADDRESS);
     registerBuiltins(this);
     this.isInitialized = true;
     Object.freeze(this);

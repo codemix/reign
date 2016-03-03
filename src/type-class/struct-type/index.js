@@ -19,10 +19,10 @@ import {
 import type {Realm} from "../../";
 
 type StructFieldsConfigObject = {
-  [name: string]: Type<any>|PartialType<any>;
+  [name: string]: Type;
 };
 
-type StructFieldsArrayConfig = [string, Type<any>|PartialType<any>][];
+type StructFieldsArrayConfig = [string, Type][];
 
 export type StructFieldsConfig = StructFieldsConfigObject | StructFieldsArrayConfig;
 
@@ -40,14 +40,21 @@ import {
 
 export class Struct extends TypedObject {}
 
-export function make (realm: Realm): TypeClass<Struct> {
+export function make (realm: Realm): TypeClass<StructType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
-  return new TypeClass('StructType', (name: string, fields: ?StructFieldsConfig, options: ?StructOptions) => {
+  return new TypeClass('StructType', function (name: string, fields?: StructFieldsConfig, options?: StructOptions) {
     return (Partial: Function) => {
+
+      type Metadata = {
+        byteLength: uint32;
+        byteAlignment: uint32;
+        canContainReferences: boolean;
+      };
 
       Partial[$CanBeEmbedded] = true;
       Partial[$CanBeReferenced] = true;
       let StructArray;
+      // @flowIssue 285
       Object.defineProperties(Partial, {
         Array: {
           get () {
@@ -66,10 +73,9 @@ export function make (realm: Realm): TypeClass<Struct> {
       /**
        * Holds information about the size and layout of the struct.
        */
-      const metadata = {
+      const metadata: Metadata = {
         byteLength: 0,
         byteAlignment: 0,
-        structWriter: undefined,
         canContainReferences: false
       };
 
@@ -129,6 +135,7 @@ export function make (realm: Realm): TypeClass<Struct> {
           fieldTypes[name] = type;
 
           defineAccessors(field);
+          /* @flowIssue 252 */
           if (type[$CanContainReferences]) {
             metadata.canContainReferences = true;
           }
@@ -207,7 +214,7 @@ export function make (realm: Realm): TypeClass<Struct> {
         const {name, type, offset} = field;
         Object.defineProperty(prototype, name, {
           enumerable: true,
-          get (): T {
+          get (): any {
             return type.load(this[$Backing], this[$Address] + offset);
           },
           set (value: any) {
@@ -225,6 +232,7 @@ export function make (realm: Realm): TypeClass<Struct> {
         if (Array.isArray(fields)) {
           const names = new Set();
           for (const [name, type] of fields) {
+            /* @flowIssue 252 */
             if (!type || !type[$CanBeEmbedded]) {
               throw new TypeError(`Field "${name}" must be an embeddable, finalized type.`);
             }
@@ -244,8 +252,9 @@ export function make (realm: Realm): TypeClass<Struct> {
         else {
           for (const name of Object.keys(fields)) {
             const type = fields[name];
+            /* @flowIssue 252 */
             if (!type || !type[$CanBeEmbedded]) {
-              throw new TypeError(`Field "${name}" must be a finalized type.`);
+              throw new TypeError(`Field "${name}" must be an embeddable, finalized type.`);
             }
             normalized.push({
               name: name,

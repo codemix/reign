@@ -5,7 +5,7 @@ import hashFloat64 from "../../hash-functions/float64";
 import type Backing from "backing";
 import type {Realm} from "../..";
 
-export function make ({PrimitiveType}: Realm, typeId: uint32): Type<float64> {
+export function make ({PrimitiveType}: Realm, typeId: uint32): PrimitiveType<float64> {
   return new PrimitiveType('Float64', {
     id: typeId,
     byteAlignment: 8,

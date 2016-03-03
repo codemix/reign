@@ -3,13 +3,11 @@
 import type Backing from "backing";
 import type {Realm} from "../..";
 
-import {$StringPool} from "../../symbols";
 import randomString from "../../random/string";
 
-export function make (realm: Realm, typeId: uint32): Type<string> {
+export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
   const {StringType, T} = realm;
-  const pool = realm[$StringPool];
-  //return pool.makeInternedStringType('InternedString', typeId);
+  const pool = realm.strings;
 
   const RawString = T.String;
 
@@ -58,7 +56,7 @@ export function make (realm: Realm, typeId: uint32): Type<string> {
       }
     },
     load: RawString.load,
-    clear (backing: Backing, pointerAddress: float64): string {
+    clear (backing: Backing, pointerAddress: float64): void {
       const existing: float64 = backing.getFloat64(pointerAddress);
       if (existing !== 0) {
         pool.removeStringByPointer(pointerAddress);

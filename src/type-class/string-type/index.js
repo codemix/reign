@@ -15,7 +15,7 @@ import {
 /**
  * Makes a StringType type class for the given realm.
  */
-export function make (realm: Realm): TypeClass<any> {
+export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
   const {TypeClass} = realm;
   return new TypeClass('StringType', (name: string, config: Object): Function => {
     return (Partial: Function): Object => {
@@ -25,6 +25,7 @@ export function make (realm: Realm): TypeClass<any> {
       Partial[$CanContainReferences] = false;
 
       let StringArray;
+      // @flowIssue 285
       Object.defineProperties(Partial, {
         Array: {
           get () {

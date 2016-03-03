@@ -284,6 +284,43 @@ describeRealm('StructType', function (options) {
 
   });
 
+  describe('Struct list', function () {
+    let Column, Screen;
+    let display;
+    it('should create a Column of pixels', function () {
+      Column = new StructType(RGBA, 640);
+    });
+    it('should create a Screen of Columns', function () {
+      Screen = new StructType(Column, 480);
+    });
+
+    it('should create a new screen instance', function () {
+      display = new Screen();
+    });
+
+    it('display should have columns', function () {
+      for (let i = 0; i < 480; i++) {
+        display[i].should.be.an.instanceOf(Column);
+      }
+    });
+
+    it('columns should have pixels', function () {
+      for (let i = 0; i < 480; i++) {
+        const col = display[i];
+        for (let j = 0; j < 480; j++) {
+          const pixel = col[j];
+          pixel.should.be.an.instanceOf(RGBA);
+        }
+      }
+    });
+
+    it('should reach into a screen and set some pixels', function () {
+      display[10][10].r = 32;
+      display[10][10].g = 32;
+      display[10][10].b = 32;
+    });
+  });
+
   describe('Struct within a struct', function () {
     let Box;
     let struct;

@@ -42,7 +42,8 @@ export class Struct extends TypedObject {}
 
 export function make (realm: Realm): TypeClass<StructType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
-  return new TypeClass('StructType', function (fields?: StructFieldsConfig, options?: StructOptions) {
+  return new TypeClass('StructType', function (fields?: Type|StructFieldsConfig, lengthOrOptions?: number| StructOptions, options?: StructOptions) {
+
     return (Partial: Function) => {
 
       const name = (options && options.name) || 'Struct<any>';
@@ -115,9 +116,21 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       /**
        * Finalize the layout of the fields within the struct.
        */
-      function finalizeLayout (fieldsConfig: StructFieldsConfig, options: StructOptions = {}): typeof Partial {
+      function finalizeLayout (
+        fieldsConfig: Type|StructFieldsConfig, lengthOrOptions?: number | StructOptions, options?: StructOptions): typeof Partial {
+        //fieldsConfig: StructFieldsConfig, options: StructOptions = {}): typeof Partial {
+
         if (isFinalized) {
           throw new Error(`Struct layout is already finalized`);
+        }
+
+        if (typeof lengthOrOptions === 'number') {
+          const ElementType: any = fieldsConfig;
+          fieldsConfig = Array.from({length: lengthOrOptions}, (_, index) => [String(index), ElementType]);
+          options = options || {};
+        }
+        else {
+          options = lengthOrOptions || {};
         }
 
         const fields = processStructConfig(fieldsConfig, options);
@@ -306,7 +319,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       }
 
       if (fields != null) {
-        finalizeLayout(fields, options);
+        finalizeLayout(fields, lengthOrOptions, options);
       }
 
       return {

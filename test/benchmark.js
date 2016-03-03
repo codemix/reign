@@ -30,7 +30,10 @@ global.benchmark.only = function benchmark (name, limit, ...fns) {
 
 
 function benchmarkRunner (name, limit, factor, fns) {
-  if (process.env.TEST_MODE === "fast") {
+  if (process.env.NODE_ENV === "coverage") {
+    limit = 1;
+  }
+  else if (process.env.TEST_MODE === "fast") {
     limit = Math.ceil(limit / 100);
   }
   return async function () {

@@ -198,7 +198,7 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         else {
           initialSize = initialCardinalityHint * 2;
         }
-        const body = backing.calloc(initialSize * Bucket.byteLength);
+        const body = backing.calloc(initialSize * BUCKET_SIZE);
         setArrayAddress(backing, header, body);
         setArrayLength(backing, header, initialSize);
         return header;
@@ -360,7 +360,7 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         const bucketArrayAddress = getArrayAddress(backing, header);
         const cardinality = getCardinality(backing, header);
 
-        const newBuckets = backing.alloc(bucketArrayLength * 2 * BUCKET_SIZE);
+        const newBuckets = backing.calloc(bucketArrayLength * 2 * BUCKET_SIZE);
         setArrayAddress(backing, header, newBuckets);
         setArrayLength(backing, header, bucketArrayLength * 2);
 
@@ -426,13 +426,57 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
          * Returns `true` if the given key was deleted, otherwise `false`.
          */
         delete: {
-          value (key: any): boolean {
+          value (key: KeyType): boolean {
             const hash: uint32 = KeyType.hashValue((key: any));
             return remove(this[$Backing], this[$Address], key, hash);
           }
+        },
+
+        /**
+         * Return a representation of the hash map which can be encoded as JSON.
+         */
+        toJSON: {
+          value (): [KeyType, ValueType][] {
+            const backing = this[$Backing];
+            const address = this[$Address];
+            const size = getCardinality(backing, address);
+            const bucketArrayLength = getArrayLength(backing, address);
+            const arr = new Array(size);
+            let current: float64 = getArrayAddress(backing, address);
+            let index: uint32 = 0;
+            for (let i = 0; i < bucketArrayLength; i++) {
+              if (getBucketHash(backing, current) !== 0) {
+                arr[index++] = [getBucketKey(backing, current), getBucketValue(backing, current)];
+              }
+              current += BUCKET_SIZE;
+            }
+
+            return arr;
+          }
+        },
+
+
+        /**
+         * Iterate the key / values in the map.
+         * IMPORTANT: The iteration order is not stable and should not be relied on!
+         * It is guaranteed that every entry will be yielded exactly once, but the order
+         * depends on the hashed value and the size of the backing array.
+         * If you need ordered iteration, use a SkipListMap.
+         */
+        [Symbol.iterator]: {
+          *value () {
+            const store = this[$Backing];
+            const address = this[$Address];
+            const bucketArrayLength = getArrayLength(store, address);
+            let current: float64 = getArrayAddress(store, address);
+            for (let index = 0; index < bucketArrayLength; index++) {
+              if (getBucketHash(store, current) !== 0) {
+                yield [getBucketKey(store, current), getBucketValue(store, current)];
+              }
+              current += BUCKET_SIZE;
+            }
+          }
         }
-
-
       });
 
 
@@ -442,7 +486,18 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         byteLength: HEADER_SIZE,
         byteAlignment: 8,
         constructor,
-        prototype
+        prototype,
+        accepts (input: any): boolean {
+          return input !== null && typeof input === 'object';
+        },
+        randomValue (): TypedHashMap<KeyType, ValueType> {
+          const map = new Partial();
+          const size = Math.ceil(Math.random() * 32);
+          for (let i = 0; i < size; i++) {
+            map.set(KeyType.randomValue(), ValueType.randomValue());
+          }
+          return map;
+        }
       };
     };
   });

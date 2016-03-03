@@ -42,8 +42,10 @@ export class Struct extends TypedObject {}
 
 export function make (realm: Realm): TypeClass<StructType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
-  return new TypeClass('StructType', function (name: string, fields?: StructFieldsConfig, options?: StructOptions) {
+  return new TypeClass('StructType', function (fields?: StructFieldsConfig, options?: StructOptions) {
     return (Partial: Function) => {
+
+      const name = (options && options.name) || 'Struct<any>';
 
       type Metadata = {
         byteLength: uint32;
@@ -82,7 +84,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       /**
        * The specialized type which references this kind of struct.
        */
-      const Reference = new ReferenceType(`Reference<${name}>`, Partial);
+      const Reference = new ReferenceType(Partial);
 
       /**
        * The constructor for struct type instances.
@@ -148,6 +150,9 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
         Partial[$CanContainReferences] = metadata.canContainReferences;
 
         Object.defineProperties(Partial, {
+          name: {
+            value: options.name || 'Struct<any>'
+          },
           byteLength: {
             value: metadata.byteLength
           },

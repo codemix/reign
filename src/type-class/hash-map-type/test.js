@@ -5,7 +5,6 @@ import {$Backing, $Address} from "../../symbols";
 describeRealm('HashMapType', function (options) {
   let realm;
   let HashMapType;
-  let StructType;
   let SimpleMap;
   let instance;
   let T;
@@ -14,7 +13,6 @@ describeRealm('HashMapType', function (options) {
     realm = options.realm;
     T = realm.T;
     HashMapType = realm.HashMapType;
-    StructType = realm.StructType;
   });
 
   it('HashMapType should be an instance of realm.TypeClass', function () {

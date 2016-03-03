@@ -217,7 +217,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
                     ? config.name
                     : `Array<${ElementType.name}>`;
 
-      Partial.ref = new ReferenceType(`Reference<${name}>`, Partial);
+      Partial.ref = new ReferenceType(Partial);
 
       const prototype: Object = Object.create(BaseArray.prototype);
       prototype[$ElementType] = ElementType;

@@ -6,8 +6,9 @@ import type Backing from "backing";
 import type {Realm} from "../..";
 
 export function make ({PrimitiveType}: Realm, typeId: uint32): PrimitiveType<float64> {
-  return new PrimitiveType('Float64', {
+  return new PrimitiveType({
     id: typeId,
+    name: 'Float64',
     byteAlignment: 8,
     byteLength: 8,
     cast (input: any): float64 {

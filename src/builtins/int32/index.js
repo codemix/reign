@@ -6,8 +6,9 @@ import type Backing from "backing";
 import type {Realm} from "../..";
 
 export function make ({PrimitiveType}: Realm, typeId: uint32): PrimitiveType<int32> {
-  return new PrimitiveType('Int32', {
+  return new PrimitiveType({
     id: typeId,
+    name: 'Int32',
     byteAlignment: 4,
     byteLength: 4,
     cast (input: any): int32 {

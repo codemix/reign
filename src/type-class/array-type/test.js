@@ -163,7 +163,7 @@ describeRealm('ArrayType', function (options) {
         let Simple;
         let simple;
         before(() => {
-          Simple = new StructType('Simple', {value: XArray});
+          Simple = new StructType({value: XArray});
         });
 
         it('should create an instance', function () {
@@ -212,7 +212,7 @@ describeRealm('ArrayType', function (options) {
         let ListArray;
         let array;
         before(() => {
-          ListNode = new StructType('ListNode');
+          ListNode = new StructType();
           ListNode.finalize({
             value: Type,
             prev: ListNode.ref,

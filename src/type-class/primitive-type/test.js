@@ -17,7 +17,7 @@ describeRealm('PrimitiveType', function (options) {
   });
 
   it('should create a new primitive type', function () {
-    Double = new PrimitiveType('Double', {
+    Double = new PrimitiveType({
       byteAlignment: 8,
       byteLength: 8,
       emptyValue () {

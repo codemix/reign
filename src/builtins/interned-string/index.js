@@ -11,8 +11,9 @@ export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
 
   const RawString = T.String;
 
-  const InternedString = new StringType('InternedString', {
+  const InternedString = new StringType({
     id: typeId,
+    name: 'InternedString',
     byteLength: 8, // Pointer
     byteAlignment: 8,
     constructor (input) {

@@ -24,7 +24,7 @@ describeRealm('StructType', function (options) {
     let SimpleStruct;
 
     it('should create a new struct type', function () {
-      SimpleStruct = new StructType('SimpleStruct', {
+      SimpleStruct = new StructType({
         value: T.Uint8
       });
     });
@@ -86,7 +86,7 @@ describeRealm('StructType', function (options) {
     let struct;
 
     it('should create a new struct type', function () {
-      RGBA = new StructType('RGBA', {
+      RGBA = new StructType({
         r: T.Uint8,
         g: T.Uint8,
         b: T.Uint8,
@@ -289,7 +289,7 @@ describeRealm('StructType', function (options) {
     let struct;
 
     it('should create a new struct type', function () {
-      Box = new StructType('Box', [
+      Box = new StructType([
         ['top', RGBA],
         ['right', RGBA],
         ['bottom', RGBA],
@@ -376,7 +376,7 @@ describeRealm('StructType', function (options) {
     let vanilla;
 
     it('should define a Tree struct, but delay finalization', function () {
-      Tree = new StructType('Tree');
+      Tree = new StructType();
     });
 
     it('should not allow instantiation until the struct is finalized', function () {

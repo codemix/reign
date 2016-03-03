@@ -19,9 +19,9 @@ describe('TypeClass', function () {
       };
       Object.setPrototypeOf(prot, TypedObject.prototype);
 
-      PrimitiveType = new TypeClass('PrimitiveType', (name, config) => {
+      PrimitiveType = new TypeClass('PrimitiveType', (config) => {
         return {
-          name: name,
+          name: config.name,
           constructor () {},
           prototype: Object.create(prot, {
             foo: {
@@ -45,7 +45,8 @@ describe('TypeClass', function () {
     });
 
     it('should create a new primitive type', function () {
-      Double = new PrimitiveType('Double', {
+      Double = new PrimitiveType({
+        name: 'Double',
         byteAlignment: 8,
         byteLength: 8
       });

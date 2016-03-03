@@ -17,7 +17,7 @@ import {
  */
 export function make (realm: Realm): TypeClass<ReferenceType<any>> {
   const {TypeClass} = realm;
-  return new TypeClass('ReferenceType', (name: string, Type: Function): Function => {
+  return new TypeClass('ReferenceType', (Target: Function): Function => {
 
     return (Reference: Function): Object => {
 
@@ -25,8 +25,8 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
       Reference[$CanBeReferenced] = false;
       Reference[$CanContainReferences] = true;
 
-      if (!Type[$CanBeReferenced]) {
-        throw new TypeError(`Type ${Type.name} cannot be referenced.`);
+      if (!Target[$CanBeReferenced]) {
+        throw new TypeError(`Type ${Target.name} cannot be referenced.`);
       }
 
       let ReferenceArray;
@@ -48,12 +48,12 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
         if (value == null) {
           backing.setFloat64(address, 0);
         }
-        else if (value[$ValueType] === Type && value[$Address]) {
+        else if (value[$ValueType] === Target && value[$Address]) {
           backing.setFloat64(address, value[$Address]);
         }
         else {
           // @fixme more safety checking here.
-          const instance = Type.cast(value);
+          const instance = Target.cast(value);
           backing.gc.ref(instance[$Address]);
           backing.setFloat64(address, instance[$Address]);
         }
@@ -62,13 +62,13 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
       /**
        * Load an object based on the reference stored at the given address.
        */
-      function loadReference (backing: Backing, address: float64): ?Type {
+      function loadReference (backing: Backing, address: float64): ?Target {
         const pointer = backing.getFloat64(address);
         if (pointer === 0) {
           return null;
         }
         else {
-          return Type.load(backing, pointer);
+          return Target.load(backing, pointer);
         }
       }
 
@@ -95,7 +95,7 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
       }
 
       return {
-        name,
+        name: `Reference<${Target.name}}>`,
         byteLength: 8,
         byteAlignment: 8,
         initialize: storeReference,
@@ -107,7 +107,7 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
           return null;
         },
         compareValues (valueA: ?Object, valueB: ?Object): int8 {
-          return Type.compareValues(valueA, valueB);
+          return Target.compareValues(valueA, valueB);
         },
         compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8 {
           if (addressA === addressB) {
@@ -132,7 +132,7 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
             return 1;
           }
           else {
-            return Type.compareAddresses(backing, pointerA, pointerB);
+            return Target.compareAddresses(backing, pointerA, pointerB);
           }
         },
         compareAddressValue (backing: Backing, address: float64, value: ?Object): int8 {
@@ -145,14 +145,14 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
               return -1;
             }
           }
-          return Type.compareAddressValue(backing, pointer, value);
+          return Target.compareAddressValue(backing, pointer, value);
         },
         randomValue (): any {
           if (Math.random() < 0.5) {
             return null;
           }
           else {
-            return Type.randomValue();
+            return Target.randomValue();
           }
         },
         hashValue (input: any): uint32 {
@@ -160,7 +160,7 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
             return 4;
           }
           else {
-            return Type.hashValue(input);
+            return Target.hashValue(input);
           }
         }
       };

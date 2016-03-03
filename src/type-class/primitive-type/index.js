@@ -20,8 +20,9 @@ export class Primitive extends TypedObject {}
  */
 export function make (realm: Realm): TypeClass<PrimitiveType<any>> {
   const {TypeClass, backing} = realm;
-  return new TypeClass('PrimitiveType', (name: string, config: Object): Function => {
+  return new TypeClass('PrimitiveType', (config: Object): Function => {
     return (primitive: PrimitiveType<any>): Object => {
+      const name = config.name || 'UnknownPrimitive';
       // @flowIssue 252
       primitive[$CanBeEmbedded] = true;
       // @flowIssue 252
@@ -41,7 +42,7 @@ export function make (realm: Realm): TypeClass<PrimitiveType<any>> {
         }
       });
       return Object.assign({
-        name,
+        name: name,
         gc: false,
         accepts (input: any): boolean {
           return false;

@@ -17,7 +17,7 @@ import {
  */
 export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
   const {TypeClass} = realm;
-  return new TypeClass('StringType', (name: string, config: Object): Function => {
+  return new TypeClass('StringType', (config: Object): Function => {
     return (Partial: Function): Object => {
 
       Partial[$CanBeEmbedded] = true;
@@ -36,13 +36,7 @@ export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
           }
         }
       });
-
-      return Object.assign(
-        {
-          name
-        },
-        config
-      );
+      return config;
     };
   });
 };

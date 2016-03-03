@@ -108,7 +108,7 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         backing.setUint32(address + CARDINALITY_OFFSET, value);
       }
 
-      const Bucket = new StructType(`HashMapBucket<${KeyType.name}, ${ValueType.name}>`, [
+      const Bucket = new StructType([
         ['hash', T.Uint32],
         ['key', KeyType],
         ['value', ValueType]
@@ -465,13 +465,13 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
          */
         [Symbol.iterator]: {
           *value () {
-            const store = this[$Backing];
-            const address = this[$Address];
-            const bucketArrayLength = getArrayLength(store, address);
-            let current: float64 = getArrayAddress(store, address);
+            let backing = this[$Backing];
+            let address = this[$Address];
+            let bucketArrayLength = getArrayLength(backing, address);
+            let current: float64 = getArrayAddress(backing, address);
             for (let index = 0; index < bucketArrayLength; index++) {
-              if (getBucketHash(store, current) !== 0) {
-                yield [getBucketKey(store, current), getBucketValue(store, current)];
+              if (getBucketHash(backing, current) !== 0) {
+                yield [getBucketKey(backing, current), getBucketValue(backing, current)];
               }
               current += BUCKET_SIZE;
             }

@@ -20,7 +20,7 @@ export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
   return new TypeClass('StringType', (name: string, config: Object): Function => {
     return (Partial: Function): Object => {
 
-      Partial[$CanBeEmbedded] = false;
+      Partial[$CanBeEmbedded] = true;
       Partial[$CanBeReferenced] = true;
       Partial[$CanContainReferences] = false;
 
@@ -39,7 +39,7 @@ export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
 
       return Object.assign(
         {
-          name,
+          name
         },
         config
       );

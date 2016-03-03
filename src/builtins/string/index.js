@@ -92,7 +92,10 @@ export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
     emptyValue (): string {
       return '';
     },
-    hashValue: hashString
+    hashValue: hashString,
+    equal (valueA: string, valueB: string) {
+      return valueA === valueB;
+    }
   });
 
   return RawString;

@@ -1,6 +1,7 @@
 /* @flow */
 import Backing from "backing";
 import {TypedObject} from "../";
+import hashString from "../../"
 
 import {
   createInitializeStruct,
@@ -33,20 +34,24 @@ export type StructOptions = {
 import {
   $Backing,
   $Address,
+  $isType,
   $CanBeEmbedded,
   $CanBeReferenced,
   $CanContainReferences
 } from "../../symbols";
 
+export const MIN_TYPE_ID = Math.pow(2, 20) * 2;
+
 export class Struct extends TypedObject {}
 
 export function make (realm: Realm): TypeClass<StructType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
+  let typeCounter = 0;
   return new TypeClass('StructType', function (fields?: Type|StructFieldsConfig, lengthOrOptions?: number| StructOptions, options?: StructOptions) {
 
     return (Partial: Function) => {
 
-      const name = (options && options.name) || 'Struct<any>';
+      typeCounter++;
 
       type Metadata = {
         byteLength: uint32;
@@ -59,6 +64,10 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       let StructArray;
       // @flowIssue 285
       Object.defineProperties(Partial, {
+        name: {
+          configurable: true,
+          value: `%Struct<0x${typeCounter.toString(16)}>`
+        },
         Array: {
           get () {
             if (StructArray === undefined) {
@@ -90,17 +99,19 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       /**
        * The constructor for struct type instances.
        */
-      function constructor (backingOrInput: ?Backing|Object, address: ?float64) {
+      function constructor (backingOrInput: ?Backing|Object, address?: float64, embedded?: boolean) {
         if (!isFinalized) {
           throw new ReferenceError(`Cannot create an instance of ${name} before the struct is finalized.`);
         }
         else if (backingOrInput instanceof Backing) {
           this[$Backing] = backingOrInput;
           this[$Address] = address;
+          this[$CanBeReferenced] = !embedded;
         }
         else {
           this[$Backing] = backing;
           this[$Address] = createStruct(backing, backingOrInput);
+          this[$CanBeReferenced] = true;
         }
       }
 
@@ -108,7 +119,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
        * Allocate space for the given struct and write the input if any.
        */
       function createStruct (backing: Backing, input: any): float64 {
-        const address = backing.gc.alloc(metadata.byteLength);
+        const address = backing.gc.alloc(metadata.byteLength, Partial.id);
         Partial.initialize(backing, address, input);
         return address;
       }
@@ -163,8 +174,11 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
         Partial[$CanContainReferences] = metadata.canContainReferences;
 
         Object.defineProperties(Partial, {
+          id: {
+            value: options.id || (MIN_TYPE_ID + typeCounter)
+          },
           name: {
-            value: options.name || 'Struct<any>'
+            value: options.name || `%StructType<0x${typeCounter.toString(16)}>`
           },
           byteLength: {
             value: metadata.byteLength
@@ -185,8 +199,8 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
             value: createStoreStruct(Partial, fields)
           },
           load: {
-            value (backing: Backing, address: float64): Partial {
-              return new Partial(backing, address);
+            value (backing: Backing, address: float64, embedded: boolean): Partial {
+              return new Partial(backing, address, embedded);
             }
           },
           clear: {
@@ -222,6 +236,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
         });
 
         isFinalized = true;
+        realm.registry.add(Partial);
         return Partial;
       }
 
@@ -230,10 +245,12 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
        */
       function defineAccessors<T> (field: StructField<T>): void {
         const {name, type, offset} = field;
+        // @flowIssue 252
+        const embedded = type[$CanBeEmbedded];
         Object.defineProperty(prototype, name, {
           enumerable: true,
           get (): any {
-            return type.load(this[$Backing], this[$Address] + offset);
+            return type.load(this[$Backing], this[$Address] + offset, embedded);
           },
           set (value: any) {
             type.store(this[$Backing], this[$Address] + offset, value);
@@ -250,19 +267,20 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
         if (Array.isArray(fields)) {
           const names = new Set();
           for (const [name, type] of fields) {
-            /* @flowIssue 252 */
-            if (!type || !type[$CanBeEmbedded]) {
-              throw new TypeError(`Field "${name}" must be an embeddable, finalized type.`);
-            }
             if (names.has(name)) {
               throw new TypeError(`A field with the name "${name}" already exists.`);
             }
+            /* @flowIssue 252 */
+            if (!type || !type[$isType]) {
+              throw new TypeError(`Field "${name}" must be a finalized type.`);
+            }
+
             names.add(name);
             normalized.push({
               name: name,
               offset: 0,
-              default: defaults[name] || type.emptyValue(),
-              type: type
+              default: defaults.hasOwnProperty(name) ? () => defaults[name] : () => type.emptyValue(true),
+              type: (!type[$CanBeEmbedded] && type[$CanBeReferenced]) ? type.ref : type
             });
           }
           return normalized;
@@ -271,14 +289,14 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
           for (const name of Object.keys(fields)) {
             const type = fields[name];
             /* @flowIssue 252 */
-            if (!type || !type[$CanBeEmbedded]) {
-              throw new TypeError(`Field "${name}" must be an embeddable, finalized type.`);
+            if (!type || !type[$isType]) {
+              throw new TypeError(`Field "${name}" must be a finalized type.`);
             }
             normalized.push({
               name: name,
               offset: 0,
-              default: defaults[name] || type.emptyValue(),
-              type: type
+              default: defaults.hasOwnProperty(name) ? () => defaults[name] : () => type.emptyValue(true),
+              type: (!type[$CanBeEmbedded] && type[$CanBeReferenced]) ? type.ref : type
             });
           }
           return optimizeFieldLayout(normalized);
@@ -323,7 +341,6 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       }
 
       return {
-        name,
         constructor,
         prototype,
         gc: true,
@@ -340,8 +357,8 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
             return new Partial(input);
           }
         },
-        emptyValue () {
-          return null;
+        emptyValue (embedded?: boolean) {
+          return embedded ? null : new Partial();
         }
       };
     };

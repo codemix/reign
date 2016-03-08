@@ -5,6 +5,7 @@ import {$Backing, $Address} from "../../symbols";
 describeRealm('HashMapType', function (options) {
   let realm;
   let HashMapType;
+  let StructType;
   let SimpleMap;
   let instance;
   let T;
@@ -13,6 +14,7 @@ describeRealm('HashMapType', function (options) {
     realm = options.realm;
     T = realm.T;
     HashMapType = realm.HashMapType;
+    StructType = realm.StructType;
   });
 
   it('HashMapType should be an instance of realm.TypeClass', function () {
@@ -416,6 +418,69 @@ describeRealm('HashMapType', function (options) {
         instance.size.should.equal(0);
       });
 
+    });
+  });
+
+  describe('Hashmap within a struct', function () {
+    let Container;
+    let StringMap;
+    let container;
+    before(() => {
+      StringMap = new HashMapType(T.InternedString, T.String);
+      Container = new StructType({
+        name: T.String,
+        dict: StringMap
+      });
+    });
+
+    it('should create an empty container', function () {
+      container = new Container();
+    });
+
+    it('should have an empty name', function () {
+      container.name.should.equal('');
+    });
+
+    it('should set the name', function () {
+      container.name = 'name goes here.';
+    });
+
+    it('should get the name', function () {
+      container.name.should.equal('name goes here.');
+    });
+
+    it('should have an empty hash map', function () {
+      container.dict.size.should.equal(0);
+    });
+
+    it('should add some items to the dictionary', function () {
+      container.dict.set('hello', 'world');
+      container.dict.set('foo', 'bar');
+      container.dict.set('greetings', 'aliens');
+    });
+
+    it('should have the right size', function () {
+      container.dict.size.should.equal(3);
+    });
+
+    it('should have the items', function () {
+      container.dict.has('hello').should.equal(true);
+      container.dict.has('foo').should.equal(true);
+      container.dict.has('greetings').should.equal(true);
+    });
+
+    it('should get the items', function () {
+      container.dict.get('hello').should.equal('world');
+      container.dict.get('foo').should.equal('bar');
+      container.dict.get('greetings').should.equal('aliens');
+    });
+
+    it('should perform a number of garbage collection cycles', function () {
+      realm.backing.gc.cycle();
+      realm.backing.gc.cycle();
+      realm.backing.gc.cycle();
+      realm.backing.gc.cycle();
+      realm.backing.gc.cycle();
     });
   });
 });

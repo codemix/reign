@@ -32,10 +32,9 @@ export const STRING_DATA_OFFSET = STRING_HEADER_SIZE;
  *
  *
  */
-export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
+export function make (realm: Realm): PrimitiveType<string> {
   const {StringType} = realm;
   const RawString = new StringType({
-    id: typeId,
     name: 'String',
     byteLength: 8, // Pointer
     byteAlignment: 8,

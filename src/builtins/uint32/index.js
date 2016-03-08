@@ -5,9 +5,8 @@ import hashInteger from "../../hash-functions/integer";
 import type Backing from "backing";
 import type {Realm} from "../..";
 
-export function make ({PrimitiveType}: Realm, typeId: uint32): PrimitiveType<uint32> {
+export function make ({PrimitiveType}: Realm): PrimitiveType<uint32> {
   return new PrimitiveType({
-    id: typeId,
     name: 'Uint32',
     byteAlignment: 4,
     byteLength: 4,

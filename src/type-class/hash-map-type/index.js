@@ -68,21 +68,42 @@ const CARDINALITY_OFFSET = 12;
 
 const INITIAL_BUCKET_COUNT = 16;
 
+export const MIN_TYPE_ID = Math.pow(2, 20) * 5;
+
 
 /**
  * Makes a HashMapType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
   const {TypeClass, StructType, ReferenceType, T, backing} = realm;
+  let typeCounter = 0;
   return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type): Function => {
     return (Partial: Function) => {
-      // @flowIssue 252
-      const canContainReferences = KeyType[$CanContainReferences] || ValueType[$CanContainReferences];
-      Partial[$CanBeEmbedded] = true;
-      Partial[$CanBeReferenced] = true;
-      Partial[$CanContainReferences] = canContainReferences;
-
       const name = `HashMap<${KeyType.name}, ${ValueType.name}>`;
+      if (realm.T[name]) {
+        return realm.T[name];
+      }
+
+      typeCounter++;
+      const id = MIN_TYPE_ID + typeCounter;
+
+      type AcceptableInput = Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object;
+
+      // @flowIssue 252
+      Partial[$CanBeEmbedded] = false;
+      Partial[$CanBeReferenced] = true;
+      Partial[$CanContainReferences] = true;
+
+      Object.defineProperties(Partial, {
+        id: {
+          value: id,
+        },
+        name: {
+          value: name
+        }
+      });
+
+      Partial.ref = new ReferenceType(Partial);
 
       function getArrayAddress (backing: Backing, address: float64): float64 {
         return backing.getFloat64(address);
@@ -153,18 +174,15 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         }
         else {
           this[$Backing] = backing;
-          this[$Address] = createHashMap(backing, backingOrInput);
+          this[$Address] = createHashMapAt(backing, backing.gc.calloc(HEADER_SIZE, id), backingOrInput);
         }
+        this[$CanBeReferenced] = true;
       }
 
       /**
        * Create a new hash map from the given input and return its address.
        */
-      function createHashMap (backing: Backing, input: ?Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object): float64 {
-
-        // Allocate space for the header.
-        const address = backing.gc.calloc(HEADER_SIZE);
-
+      function createHashMapAt (backing: Backing, address: float64, input: ?AcceptableInput): float64 {
         if (input == null) {
           createEmptyHashMap(backing, address);
         }
@@ -381,6 +399,37 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         backing.free(bucketArrayAddress);
       }
 
+      /**
+       * Destroy the hashmap at the given address, along with all its contents.
+       */
+      function destructor (backing: Backing, header: float64): void {
+        const bucketArrayAddress = getArrayAddress(backing, header);
+        if (bucketArrayAddress !== 0) {
+          const bucketArrayLength = getArrayLength(backing, header);
+          let current = bucketArrayAddress;
+          for (let index = 0; index < bucketArrayLength; index++) {
+            Bucket.destructor(backing, current);
+            current += BUCKET_SIZE;
+          }
+          setArrayAddress(backing, header, 0);
+          setArrayLength(backing, header, 0);
+          backing.free(bucketArrayAddress);
+        }
+      }
+
+      function clear (backing: Backing, header: float64): void {
+        const bucketArrayAddress = getArrayAddress(backing, header);
+        if (bucketArrayAddress !== 0) {
+          const bucketArrayLength = getArrayLength(backing, header);
+          let current = bucketArrayAddress;
+          for (let index = 0; index < bucketArrayLength; index++) {
+            Bucket.clear(backing, current);
+            current += BUCKET_SIZE;
+          }
+          setCardinality(backing, header, 0);
+        }
+      }
+
       const prototype = Object.create(HashMap.prototype, {
         /**
          * Get the value associated with the given key, otherwise undefined.
@@ -482,6 +531,7 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
 
 
       return {
+        id,
         name,
         byteLength: HEADER_SIZE,
         byteAlignment: 8,
@@ -490,6 +540,17 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         accepts (input: any): boolean {
           return input !== null && typeof input === 'object';
         },
+        initialize (backing: Backing, address: float64, initialValue?: AcceptableInput): void {
+          createHashMapAt(backing, address, initialValue);
+        },
+        store (backing: Backing, address: float64, input?: AcceptableInput): void {
+          createHashMapAt(backing, address, input);
+        },
+        load (backing: Backing, address: float64): Partial {
+          return new Partial(backing, address);
+        },
+        clear: clear,
+        destructor: destructor,
         randomValue (): TypedHashMap<KeyType, ValueType> {
           const map = new Partial();
           const size = Math.ceil(Math.random() * 32);
@@ -497,6 +558,9 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
             map.set(KeyType.randomValue(), ValueType.randomValue());
           }
           return map;
+        },
+        emptyValue (): null {
+          return new Partial();
         }
       };
     };

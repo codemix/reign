@@ -15,19 +15,19 @@ export function createInitializeStruct (Partial: PartialType<Object>, fields: St
     defaults.push(field.default);
     if (isValidIdentifier(name)) {
       return `
-        type${index}.initialize(backing, address + ${offset}, (tmp = input.${name}) !== undefined ? tmp : defaults[${index}]);
+        type${index}.initialize(backing, address + ${offset}, (tmp = input.${name}) !== undefined ? tmp : defaults[${index}]());
       `;
     }
     else {
       const sanitizedName = JSON.stringify(name);
       return `
-        type${index}.initialize(backing, address + ${offset}, (tmp = input[${sanitizedName}]) !== undefined ? tmp : defaults[${index}]);
+        type${index}.initialize(backing, address + ${offset}, (tmp = input[${sanitizedName}]) !== undefined ? tmp : defaults[${index}]());
       `;
     }
   }).join('');
 
   const setEmpty = fields.map(({name, type, offset}, index) => `
-        type${index}.initialize(backing, address + ${offset}, defaults[${index}]);
+        type${index}.initialize(backing, address + ${offset}, defaults[${index}]());
   `).join('');
 
   const argNames = ['$Address', 'Partial', 'defaults', ...fields.map((_, index) => `type${index}`)];

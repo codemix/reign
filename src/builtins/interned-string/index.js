@@ -5,14 +5,13 @@ import type {Realm} from "../..";
 
 import randomString from "../../random/string";
 
-export function make (realm: Realm, typeId: uint32): PrimitiveType<string> {
+export function make (realm: Realm): PrimitiveType<string> {
   const {StringType, T} = realm;
   const pool = realm.strings;
 
   const RawString = T.String;
 
   const InternedString = new StringType({
-    id: typeId,
     name: 'InternedString',
     byteLength: 8, // Pointer
     byteAlignment: 8,

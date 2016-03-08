@@ -23,18 +23,18 @@ export function registerBuiltins (realm: Realm): TypeRegistry {
 
   const registry = realm.registry;
 
-  registry.add(makeInt8(realm, 1));
-  registry.add(makeUint8(realm, 2));
-  registry.add(makeInt16(realm, 3));
-  registry.add(makeUint16(realm, 4));
-  registry.add(makeInt32(realm, 5));
-  registry.add(makeUint32(realm, 6));
-  registry.add(makeFloat32(realm, 7));
-  registry.add(makeFloat64(realm, 8));
-  //registry.add(makeNumber(realm, 9));
-  registry.add(makeBoolean(realm, 10));
-  registry.add(makeString(realm, 11));
-  registry.add(makeInternedString(realm, 12));
+  makeInt8(realm);
+  makeUint8(realm);
+  makeInt16(realm);
+  makeUint16(realm);
+  makeInt32(realm);
+  makeUint32(realm);
+  makeFloat32(realm);
+  makeFloat64(realm);
+  //makeNumber(realm, 9);
+  makeBoolean(realm);
+  makeString(realm);
+  makeInternedString(realm);
 
   return registry;
 }

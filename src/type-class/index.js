@@ -6,7 +6,7 @@ export class TypedObject {
 
 }
 
-import {$isType} from "../symbols";
+import {$isType, $ValueType} from "../symbols";
 
 /**
  * Make the TypeClass meta-class for the given realm.
@@ -37,6 +37,13 @@ export function make (realm: Realm): Function {
         config = config(Target);
       }
 
+      if (config[$isType]) {
+        if (config.name && config.id) {
+          realm.registry.add(config);
+        }
+        return config;
+      }
+
       const source = config.prototype || {};
       // @flowIssue 1138
       if (!TypedObject.prototype.isPrototypeOf(source) && isSimplePrototype(Object.getPrototypeOf(source))) {
@@ -53,6 +60,7 @@ export function make (realm: Realm): Function {
 
       Target.prototype = Object.create(source);
       Target.prototype.constructor = Target;
+      Object.defineProperty(Target.prototype, $ValueType, { value: Target });
 
       // @flowIssue 1138
       Object.setPrototypeOf(Target, define.prototype);
@@ -64,7 +72,9 @@ export function make (realm: Realm): Function {
       });
 
       Object.defineProperty(Target, $isType, { value: true });
-
+      if (Target.name && Target.id) {
+        realm.registry.add(Target);
+      }
       return Target;
     }
 

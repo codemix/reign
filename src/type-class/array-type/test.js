@@ -29,7 +29,7 @@ describeRealm('ArrayType', function (options) {
       let input;
       before(() => {
         Type = T[typeName];
-        XArray = new ArrayType(Type);
+        XArray = Type.Array;
         input = Array.from({length: 16}, () => Type.randomValue());
       });
 
@@ -245,26 +245,21 @@ describeRealm('ArrayType', function (options) {
       });
     });
   });
-
   it('should create a new base array type', function () {
-    const Int32Array = new ArrayType(T.Int32, {
-      id: 123,
-      name: 'Int32Array'
-    });
-    realm.registry.add(Int32Array);
+    (new ArrayType(T.Int32)).should.equal(T.Int32.Array);
   });
 
-  it('T.Int32Array should be an instance of ArrayType', function () {
-    T.Int32Array.should.be.an.instanceOf(ArrayType);
+  it('T.Int32.Array should be an instance of ArrayType', function () {
+    T.Int32.Array.should.be.an.instanceOf(ArrayType);
   });
 
   it('should create an instance of the array', function () {
-    const instance = new T.Int32Array(20);
+    const instance = new T.Int32.Array(20);
   });
 
   it('should create an instance of the array from an array', function () {
     const input = Array.from({length: 20}, (_, index) => index + 1);
-    const instance = new T.Int32Array(input);
+    const instance = new T.Int32.Array(input);
   });
 
   describe('Benchmarks', function () {
@@ -273,7 +268,7 @@ describeRealm('ArrayType', function (options) {
     let input;
 
     it('should set up the types', function () {
-      Custom = new ArrayType(T.Int32);
+      Custom = T.Int32.Array;
       Native = Int32Array;
       input = Array.from({length: 200}, (_, index) => index + 1);
       custom = new Custom(input);

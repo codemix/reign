@@ -53,5 +53,6 @@
   "bugs": {
     "url": "https://github.com/codemix/type-realm/issues"
   },
-  "homepage": "https://github.com/codemix/type-realm#readme"
+  "homepage": "https://github.com/codemix/type-realm#readme",
+  "private": true
 }

@@ -21,6 +21,8 @@ export type MapVisitor = (element: any, index: uint32, context: BaseArray) => an
 export type FilterVisitor = (element: any, index: uint32, context: BaseArray) => boolean;
 export type Reducer = (accumulator: any, element: any, index: uint32, context: BaseArray) => any;
 
+export const MIN_TYPE_ID = Math.pow(2, 20) * 4;
+
 export class BaseArray extends TypedObject {
 
   BYTES_PER_ELEMENT: uint32;
@@ -192,8 +194,12 @@ function ensureSlots (min: uint32) {
  * Makes a TypedArray type class for a given realm.
  */
 export function make (realm: Realm): TypeClass<ArrayType<any>> {
-  const {TypeClass, ReferenceType, backing, alignTo} = realm;
-  return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
+  const {TypeClass, ReferenceType, backing} = realm;
+  let typeCounter = 0;
+  return new TypeClass('ArrayType', (ElementType: Type): Function => {
+    if (!ElementType[$CanBeEmbedded] && ElementType[$CanBeReferenced]) {
+      ElementType = ElementType.ref;
+    }
     return (Partial: Class<TypedArray<ElementType>>): Object => {
       // @flowIssue 252
       const canContainReferences = ElementType[$CanContainReferences];
@@ -204,18 +210,28 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
       // @flowIssue 252
       Partial[$CanContainReferences] = canContainReferences;
       let MultidimensionalArray;
-      // @flowIssue 285
-      Object.defineProperty(Partial, 'Array', {
-        get (): any {
-          if (MultidimensionalArray === undefined) {
-            MultidimensionalArray = new realm.ArrayType(Partial);
+      const name = (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${typeCounter.toString(16)}>`;
+      if (realm.T[name]) {
+        return realm.T[name];
+      }
+      typeCounter++;
+      const id = MIN_TYPE_ID + typeCounter;
+
+
+      // @ flowIssue 285
+      Object.defineProperties(Partial, {
+        name: {
+          value: name
+        },
+        Array: {
+          get (): any {
+            if (MultidimensionalArray === undefined) {
+              MultidimensionalArray = new realm.ArrayType(Partial);
+            }
+            return MultidimensionalArray;
           }
-          return MultidimensionalArray;
         }
       });
-      const name = (typeof config.name === 'string' && config.name.length)
-                    ? config.name
-                    : `Array<${ElementType.name}>`;
 
       Partial.ref = new ReferenceType(Partial);
 
@@ -486,7 +502,8 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         return new Partial(array);
       }
 
-      return Object.assign({
+      return {
+        id,
         name,
         byteAlignment: 8,
         byteLength: 16,
@@ -619,7 +636,17 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         },
         hashValue: hashArray,
         randomValue: randomArray
-      }, config);
+      };
     };
   });
 };
+
+
+
+/**
+ * Ensure that the given value is aligned to the given number of bytes.
+ */
+export function alignTo (value: number, numberOfBytes: number): number {
+  const rem = value % numberOfBytes;
+  return rem === 0 ? value : value + (numberOfBytes - rem);
+}

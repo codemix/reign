@@ -13,6 +13,8 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
+export const MIN_TYPE_ID = 1;
+
 export class Primitive extends TypedObject {}
 
 /**
@@ -20,9 +22,14 @@ export class Primitive extends TypedObject {}
  */
 export function make (realm: Realm): TypeClass<PrimitiveType<any>> {
   const {TypeClass, backing} = realm;
+  let typeCounter = 0;
+
   return new TypeClass('PrimitiveType', (config: Object): Function => {
     return (primitive: PrimitiveType<any>): Object => {
-      const name = config.name || 'UnknownPrimitive';
+      typeCounter++;
+      const name = config.name || `%Primitive<0x${typeCounter.toString(16)}>`;
+      const id = config.id || (MIN_TYPE_ID + typeCounter);
+
       // @flowIssue 252
       primitive[$CanBeEmbedded] = true;
       // @flowIssue 252
@@ -42,7 +49,8 @@ export function make (realm: Realm): TypeClass<PrimitiveType<any>> {
         }
       });
       return Object.assign({
-        name: name,
+        name,
+        id,
         gc: false,
         accepts (input: any): boolean {
           return false;

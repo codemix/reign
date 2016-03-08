@@ -12,14 +12,20 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
+export const MIN_TYPE_ID = Math.pow(2, 20) * 3;
+
 /**
  * Makes a ReferenceType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<ReferenceType<any>> {
   const {TypeClass} = realm;
+  let typeCounter = 0;
   return new TypeClass('ReferenceType', (Target: Function): Function => {
 
     return (Reference: Function): Object => {
+      typeCounter++;
+      const name = typeof Target.name === 'string' && Target.name.length > 0 ? `Reference<${Target.name}>` : `%Reference<0x${typeCounter.toString(16)}>`;
+      const id = MIN_TYPE_ID + typeCounter;
 
       Reference[$CanBeEmbedded] = true;
       Reference[$CanBeReferenced] = false;
@@ -41,64 +47,103 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
           }
         }
       });
+
+      /**
+       * Initialize a reference to the given object at the given address.
+       */
+      function initializeReference (backing: Backing, pointerAddress: float64, value?: Object): void {
+
+        if (value == null) {
+          backing.setFloat64(pointerAddress, 0);
+        }
+        else if (value instanceof Target) {
+          if (!value[$CanBeReferenced]) {
+            throw new ReferenceError(`Cannot reference value of type ${Target.name}`);
+          }
+          const address = value[$Address];
+
+          backing.gc.ref(address);
+          backing.setFloat64(pointerAddress, address);
+        }
+        else {
+          const address = backing.gc.alloc(Target.byteLength, Target.id, 1);
+          Target.initialize(backing, address, value);
+          backing.setFloat64(pointerAddress, address);
+        }
+      }
+
       /**
        * Store a reference to the given object at the given address.
        */
-      function storeReference (backing: Backing, address: float64, value: ?Object): void {
+      function storeReference (backing: Backing, pointerAddress: float64, value: ?Object): void {
+        const existing = backing.getFloat64(pointerAddress);
+
         if (value == null) {
-          backing.setFloat64(address, 0);
+          if (existing !== 0) {
+            backing.setFloat64(pointerAddress, 0);
+          }
+          return;
         }
-        else if (value[$ValueType] === Target && value[$Address]) {
-          backing.setFloat64(address, value[$Address]);
+        else if (existing !== 0) {
+          backing.gc.unref(existing);
+        }
+
+        if (value instanceof Target) {
+          if (!value[$CanBeReferenced]) {
+            throw new ReferenceError(`Cannot reference value of type ${Target.name}`);
+          }
+          const address = value[$Address];
+          backing.gc.ref(address);
+          backing.setFloat64(pointerAddress, address);
         }
         else {
-          // @fixme more safety checking here.
-          const instance = Target.cast(value);
-          backing.gc.ref(instance[$Address]);
-          backing.setFloat64(address, instance[$Address]);
+          const address = backing.gc.alloc(Target.byteLength, Target.id, 1);
+          Target.initialize(backing, address, value);
+          backing.setFloat64(pointerAddress, address);
         }
       }
 
       /**
        * Load an object based on the reference stored at the given address.
        */
-      function loadReference (backing: Backing, address: float64): ?Target {
-        const pointer = backing.getFloat64(address);
-        if (pointer === 0) {
+      function loadReference (backing: Backing, pointerAddress: float64): ?Target {
+        const address = backing.getFloat64(pointerAddress);
+        if (address === 0) {
           return null;
         }
         else {
-          return Target.load(backing, pointer);
+          return Target.load(backing, address);
         }
       }
 
       /**
        * Remove a reference at the given address.
        */
-      function clearReference (backing: Backing, address: float64) {
-        const pointer = backing.getFloat64(address);
-        if (pointer !== 0) {
-          backing.setFloat64(address, 0);
-          backing.gc.unref(pointer);
+      function clearReference (backing: Backing, pointerAddress: float64) {
+        const address = backing.getFloat64(pointerAddress);
+        if (address !== 0) {
+          backing.setFloat64(pointerAddress, 0);
+          backing.gc.unref(address);
         }
       }
 
       /**
        * Destroy a reference at the given address.
        */
-      function referenceDestructor (backing: Backing, address: float64) {
-        const pointer = backing.getFloat64(address);
-        if (pointer !== 0) {
-          backing.setFloat64(address, 0);
-          backing.gc.unref(pointer);
+      function referenceDestructor (backing: Backing, pointerAddress: float64) {
+        const address = backing.getFloat64(pointerAddress);
+        if (address !== 0) {
+          backing.setFloat64(pointerAddress, 0);
+          backing.gc.unref(address);
         }
       }
 
       return {
-        name: `Reference<${Target.name}}>`,
+        id,
+        name,
         byteLength: 8,
         byteAlignment: 8,
-        initialize: storeReference,
+        initialize: initializeReference,
         store: storeReference,
         load: loadReference,
         clear: clearReference,

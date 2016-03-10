@@ -77,15 +77,16 @@ export const MIN_TYPE_ID = Math.pow(2, 20) * 5;
 export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
   const {TypeClass, StructType, ReferenceType, T, backing} = realm;
   let typeCounter = 0;
-  return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type): Function => {
+  return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type, config: Object = {}): Function => {
     return (Partial: Function) => {
-      const name = `HashMap<${KeyType.name}, ${ValueType.name}>`;
+
+      const name = typeof config.name === 'string' ? config.name : `HashMap<${KeyType.name}, ${ValueType.name}>`;
       if (realm.T[name]) {
         return realm.T[name];
       }
 
       typeCounter++;
-      const id = MIN_TYPE_ID + typeCounter;
+      const id = typeof config.id === 'number' ? config.id : MIN_TYPE_ID + typeCounter;
 
       type AcceptableInput = Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object;
 

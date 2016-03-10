@@ -4,6 +4,7 @@ import {make as makePrimitiveType} from "./type-class/primitive-type";
 import {make as makeStringType} from "./type-class/string-type";
 import {make as makeReferenceType} from "./type-class/reference-type";
 import {make as makeStructType} from "./type-class/struct-type";
+import {make as makeObjectType} from "./type-class/object-type";
 import {make as makeArrayType} from "./type-class/array-type";
 import {make as makeHashMapType} from "./type-class/hash-map-type";
 
@@ -16,6 +17,8 @@ import {registerBuiltins} from "./builtins";
 import type Backing from "backing";
 import type TypeRegistry from "type-registry";
 import type {StringPool} from "./string-pool";
+
+import {$ValueType} from "./symbols";
 
 const HEADER_ADDRESS = 336; // First usable block in the backing store.
 const VERSION_ADDRESS = HEADER_ADDRESS;
@@ -31,6 +34,7 @@ export class Realm {
   PrimitiveType: Class<TypeClass<PrimitiveType<any>>>;
   ReferenceType: Class<TypeClass<ReferenceType<any>>>;
   StructType: Class<TypeClass<StructType<Object>>>;
+  ObjectType: Class<TypeClass<ObjectType<Object>>>;
   ArrayType: Class<TypeClass<ArrayType<any>>>;
   StringType: Class<TypeClass<PrimitiveType<string>>>;
   HashMapType: Class<TypeClass<HashMapType<any, any>>>;
@@ -57,6 +61,7 @@ export class Realm {
     this.PrimitiveType = makePrimitiveType(this);
     this.ReferenceType = makeReferenceType(this);
     this.StructType = makeStructType(this);
+    this.ObjectType = makeObjectType(this);
     this.ArrayType = makeArrayType(this);
     this.StringType = makeStringType(this);
     this.HashMapType = makeHashMapType(this);
@@ -81,6 +86,33 @@ export class Realm {
     this.isInitialized = true;
     Object.freeze(this);
     return this;
+  }
+
+  /**
+   * Return the type of the given value.
+   */
+  typeOf (value: any): ?Type {
+    if (value == null || typeof value === 'function' || typeof value === 'symbol') {
+      return null;
+    }
+    else if (typeof value === 'number') {
+      return this.T.Float64;
+    }
+    else if (typeof value === 'boolean') {
+      return this.T.Boolean;
+    }
+    else if (typeof value === 'string') {
+      return this.T.String;
+    }
+    else if (value[$ValueType]) {
+      return value[$ValueType];
+    }
+    else if (Array.isArray(value)) {
+      return this.T.Array;
+    }
+    else {
+      return this.T.Object;
+    }
   }
 }
 

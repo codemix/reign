@@ -116,11 +116,32 @@ declare class TypedStruct<S> extends TypedEntity {
   static ref: ReferenceType<TypedStruct<S>>;
 }
 
+declare class TypedObject<S> extends TypedEntity {
+  static [symbol: Symbol]: any;
+  static cast (input: any): TypedObject<S>;
+  static accepts (input: any): boolean;
+  static initialize (backing: Backing, address: float64, initialValue?: S|TypedObject<S>): void;
+  static store (backing: Backing, address: float64, value: S|TypedObject<S>): void;
+  static load (backing: Backing, address: float64): TypedObject<S>;
+  static clear (backing: Backing, address: float64): void;
+  static destructor (backing: Backing, address: float64): void;
+  static emptyValue (): TypedObject<S>;
+  static randomValue (): TypedObject<S>;
+  static hashValue (input: TypedObject<S>|S): uint32;
+  static equal (valueA: TypedObject<S>|S, valueB: TypedObject<S>|S): boolean;
+  static compareValues (valueA: TypedObject<S>|S, valueB: TypedObject<S>|S): int8;
+  static compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8;
+  static compareAddressValue (backing: Backing, address: float64, value: TypedObject<S>|S): int8;
+  static Array: Class<ArrayType<TypedObject<S>>>;
+  static ref: ReferenceType<TypedObject<S>>;
+}
+
 declare type PrimitiveType<T> = Class<TypedPrimitive<T>>;
 declare type ReferenceType<T> = Class<TypedReference<T>>;
 declare type ArrayType<E> = Class<TypedArray<E>>;
 declare type HashMapType<K, V> = Class<TypedHashMap<K, V>>;
 declare type StructType<S> = Class<TypedStruct<S>>;
+declare type ObjectType<S> = Class<TypedObject<S>>;
 
 declare type Type = Class<
     TypedPrimitive<any>
@@ -128,6 +149,7 @@ declare type Type = Class<
   | TypedArray<any>
   | TypedHashMap<any, any>
   | TypedStruct<any>
+  | TypedObject<Object>
 >;
 
 declare type PartialType<T> = {

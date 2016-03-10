@@ -17,7 +17,11 @@ import {make as makeFloat64} from "./float64";
 import {make as makeBoolean} from "./boolean";
 import {make as makeString} from "./string";
 import {make as makeInternedString} from "./interned-string";
+import {make as makeObject} from "./object";
+import {make as makeArray} from "./array";
+import {make as makeHashMap} from "./hash-map";
 
+import {make as makeAny} from "./any";
 
 export function registerBuiltins (realm: Realm): TypeRegistry {
 
@@ -31,10 +35,15 @@ export function registerBuiltins (realm: Realm): TypeRegistry {
   makeUint32(realm);
   makeFloat32(realm);
   makeFloat64(realm);
-  //makeNumber(realm, 9);
+  //makeNumber(realm);
   makeBoolean(realm);
   makeString(realm);
   makeInternedString(realm);
+  makeAny(realm);
+  makeObject(realm);
+  makeArray(realm);
+  makeHashMap(realm);
+
 
   return registry;
 }

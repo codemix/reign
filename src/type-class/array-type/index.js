@@ -196,7 +196,7 @@ function ensureSlots (min: uint32) {
 export function make (realm: Realm): TypeClass<ArrayType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
   let typeCounter = 0;
-  return new TypeClass('ArrayType', (ElementType: Type): Function => {
+  return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
     if (!ElementType[$CanBeEmbedded] && ElementType[$CanBeReferenced]) {
       ElementType = ElementType.ref;
     }
@@ -210,12 +210,12 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
       // @flowIssue 252
       Partial[$CanContainReferences] = canContainReferences;
       let MultidimensionalArray;
-      const name = (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${typeCounter.toString(16)}>`;
+      const name = typeof config.name === 'string' ? config.name : (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${typeCounter.toString(16)}>`;
       if (realm.T[name]) {
         return realm.T[name];
       }
       typeCounter++;
-      const id = MIN_TYPE_ID + typeCounter;
+      const id = typeof config.id === 'number' && config.id > 0 ? config.id : MIN_TYPE_ID + typeCounter;
 
 
       // @ flowIssue 285

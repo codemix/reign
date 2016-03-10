@@ -10,9 +10,10 @@
     "bluebird": "^3.3.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.1",
-    "type-registry": "0.0.1"
+    "type-registry": "0.0.2"
   },
   "devDependencies": {
+    "backing": "^0.1.0",
     "babel-cli": "^6.6.4",
     "babel-core": "^6.6.4",
     "babel-plugin-contracts": "^1.1.1",

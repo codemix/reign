@@ -272,7 +272,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         }
         const pointer = backing.getFloat64(address);
         assert: pointer > 0;
-        return ElementType.load(backing, pointer + (normalizedIndex * ElementType.byteLength));
+        return ElementType.load(backing, pointer + (normalizedIndex * BYTES_PER_ELEMENT));
       };
 
       /**
@@ -288,7 +288,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         }
         const pointer = backing.getFloat64(address);
         assert: pointer > 0;
-        return ElementType.store(backing, pointer + (normalizedIndex * ElementType.byteLength), value);
+        return ElementType.store(backing, pointer + (normalizedIndex * BYTES_PER_ELEMENT), value);
       };
 
       /**
@@ -313,7 +313,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           }
           else {
             ensureSlots(input);
-            const byteLength = input * ElementType.byteLength;
+            const byteLength = input * BYTES_PER_ELEMENT;
             const address = backing.gc.alloc(byteLength + 16);
             backing.setFloat64(address, address + 16);
             backing.setUint32(address + 8, input);
@@ -340,7 +340,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           }
           else {
             ensureSlots(array.length);
-            const byteLength = array.length * ElementType.byteLength;
+            const byteLength = array.length * BYTES_PER_ELEMENT;
             const address = backing.gc.alloc(byteLength + 16);
             backing.setFloat64(address, address + 16);
             backing.setUint32(address + 8, array.length);
@@ -360,7 +360,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         let current = address;
         for (let i = 0; i < length; i++) {
           ElementType.initialize(backing, current);
-          current += ElementType.byteLength;
+          current += BYTES_PER_ELEMENT;
         }
         return address;
       }
@@ -373,7 +373,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         let current = address;
         for (let i = 0; i < length; i++) {
           ElementType.initialize(backing, current, input[i]);
-          current += ElementType.byteLength;
+          current += BYTES_PER_ELEMENT;
         }
         return address;
       }
@@ -403,7 +403,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
             backing.setUint32(address + 8, 0);
           }
           else {
-            const byteLength = array.length * ElementType.byteLength;
+            const byteLength = array.length * BYTES_PER_ELEMENT;
             const dataAddress = backing.alloc(byteLength);
             backing.setFloat64(address, dataAddress);
             backing.setUint32(address + 8, array.length);
@@ -427,7 +427,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
             let current = existing;
             for (let i = 0; i < length; i++) {
               ElementType.destructor(backing, current);
-              current += ElementType.byteLength;
+              current += BYTES_PER_ELEMENT;
             }
           }
           backing.free(existing);
@@ -454,7 +454,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
             backing.setUint32(address + 8, 0);
           }
           else {
-            const byteLength = array.length * ElementType.byteLength;
+            const byteLength = array.length * BYTES_PER_ELEMENT;
             const dataAddress = backing.alloc(byteLength);
             backing.setFloat64(address, dataAddress);
             backing.setUint32(address + 8, array.length);
@@ -485,7 +485,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         for (let i = 0; i < length; i++) {
           hash ^= ElementType.hashValue((ElementType.load(backing, current): any));
           hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-          current += ElementType.byteLength;
+          current += BYTES_PER_ELEMENT;
         }
         return hash >>> 0;
       }
@@ -531,7 +531,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           let current = pointer;
           for (let i = 0; i < length; i++) {
             ElementType.clear(backing, current);
-            current += ElementType.byteLength;
+            current += BYTES_PER_ELEMENT;
           }
         },
         destructor (backing: Backing, address: float64): void {
@@ -542,7 +542,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
             let current = pointer;
             for (let i = 0; i < length; i++) {
               ElementType.destructor(backing, current);
-              current += ElementType.byteLength;
+              current += BYTES_PER_ELEMENT;
             }
           }
           if (pointer !== address + 16) {

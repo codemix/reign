@@ -5,6 +5,9 @@ A realm for typed objects.
 
 ## What?
 
+## API Documentation
+
+Currently very work in progress, see [src/README.md](./src/README.md).
 
 ## Installation
 

@@ -18,14 +18,17 @@ import type Backing from "backing";
 import type TypeRegistry from "type-registry";
 import type {StringPool} from "./string-pool";
 
-import {$ValueType} from "./symbols";
+import {$ValueType, $Address} from "./symbols";
 
 const HEADER_ADDRESS = 336; // First usable block in the backing store.
 const VERSION_ADDRESS = HEADER_ADDRESS;
 const STRING_POOL_POINTER_ADDRESS = VERSION_ADDRESS + 8;
-const HEADER_CHECKSUM_ADDRESS = STRING_POOL_POINTER_ADDRESS + 16;
+const ROOT_MAP_POINTER_ADDRESS = STRING_POOL_POINTER_ADDRESS + 8
+const HEADER_CHECKSUM_ADDRESS = ROOT_MAP_POINTER_ADDRESS + 8;
 const HEADER_SIZE = (HEADER_CHECKSUM_ADDRESS + 8) - HEADER_ADDRESS;
 const FIRST_ADDRESS = HEADER_ADDRESS + HEADER_SIZE;
+
+const $RootHashMap = Symbol('%RootHashMap');
 
 export class Realm {
 
@@ -83,6 +86,14 @@ export class Realm {
 
     this.strings = makeStringPool(this, STRING_POOL_POINTER_ADDRESS);
     registerBuiltins(this);
+    let rootAddress = this.backing.getFloat64(ROOT_MAP_POINTER_ADDRESS);
+    if (rootAddress === 0) {
+      this[$RootHashMap] = new this.T.HashMap();
+      this.backing.setFloat64(ROOT_MAP_POINTER_ADDRESS, this[$RootHashMap][$Address]);
+    }
+    else {
+      this[$RootHashMap] = new this.T.HashMap(this.backing, rootAddress);
+    }
     this.isInitialized = true;
     Object.freeze(this);
     return this;
@@ -114,6 +125,19 @@ export class Realm {
       return this.T.Object;
     }
   }
+
+  get (key: any): any {
+    return this[$RootHashMap].get(key);
+  }
+
+  has (key: any): any {
+    return this[$RootHashMap].has(key);
+  }
+
+  set (key: any, value: any): Realm {
+    this[$RootHashMap].set(key, value);
+    return this;
+  }
 }
 
 
@@ -132,6 +156,7 @@ function verifyHeader (realm: Realm) {
     backing.setUint32(HEADER_ADDRESS, HEADER_ADDRESS);
     backing.setUint32(HEADER_CHECKSUM_ADDRESS, HEADER_CHECKSUM_ADDRESS);
     backing.setFloat64(STRING_POOL_POINTER_ADDRESS, 0);
+    backing.setFloat64(ROOT_MAP_POINTER_ADDRESS, 0);
   }
 }
 

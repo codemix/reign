@@ -21,18 +21,20 @@ function runTest (describe: Function, label: string, test: ?Function) {
     const dirname = path.resolve(__dirname, '..', 'data', name);
     const arenaSize = 2 * 1024 * 1024; // 2 Mb
     const options = {
-      backing: null
+      backing: null,
+      backingOptions: null
     };
 
     before(async () => {
-      options.backing = new Backing({
+      options.backingOptions = {
         name,
         arenaSize,
         arenaSource: {
           type: 'mmap',
           dirname
         }
-      });
+      };
+      options.backing = new Backing(options.backingOptions);
 
       await options.backing.init();
     });

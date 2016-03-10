@@ -40,7 +40,6 @@ async function run () {
   const {StructType, T} = realm;
 
   const Point = new StructType(
-    'Point',
     {
       r: T.UInt8,
       g: T.UInt8,
@@ -54,16 +53,16 @@ async function run () {
     }
   );
 
-  const Column = new StructType('Column', Point, 1024);
+  const Column = new StructType(Point, 1024);
 
-  const Screen = new StructType('Screen', Column, 768);
+  const Screen = new StructType(Column, 768);
 
 
   const display = new Screen();
 
   display[10][10].r = 127;
 
-  const User = new StructType('User', {
+  const User = new StructType({
     name: T.String,
     screen: Screen.ref // Store references to screens, don't embed them
   });

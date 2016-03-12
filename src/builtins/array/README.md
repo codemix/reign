@@ -1,4 +1,4 @@
 # Array Type
 
-The generic array type, can contain [any](../any/README.md) serializable value.
+The generic array type, can contain [any](../any) serializable value.
 

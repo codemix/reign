@@ -1,6 +1,6 @@
 # Hash Map
 
-Generic hash map type allowing [any](../any/README.md) serialiable input as key / value.
+Generic hash map type allowing [any](../any) serialiable input as key / value.
 
 ```js
 const map = new T.HashMap();

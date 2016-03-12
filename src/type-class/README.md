@@ -4,10 +4,10 @@ Type classes represent categories of type. Each type class is assigned a range o
 
 Builtin Type Classes:
 
-* [ArrayType](./array-type/README.md)
-* [HashMapType](./hash-map-type/README.md)
-* [ObjectType](./object-type/README.md)
-* [PrimitiveType](./primitive-type/README.md)
-* [ReferenceType](./reference-type/README.md)
-* [StringType](./string-type/README.md)
-* [StructType](./struct-type/README.md)
+* [ArrayType](./array-type)
+* [HashMapType](./hash-map-type)
+* [ObjectType](./object-type)
+* [PrimitiveType](./primitive-type)
+* [ReferenceType](./reference-type)
+* [StringType](./string-type)
+* [StructType](./struct-type)

@@ -12,6 +12,7 @@ declare class TypedEntity {
   static name: string;
   static byteLength: uint32;
   static byteAlignment: uint32;
+  static flowType (): string;
 }
 
 declare class TypedPrimitive<T> extends TypedEntity {

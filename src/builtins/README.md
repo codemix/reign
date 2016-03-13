@@ -14,6 +14,7 @@ These types are builtin and always available.
 * [T.Float32](./float32)
 * [T.Float64](./float64)
 * [T.HashMap](./hash-map)
+* [T.HashSet](./hash-set)
 * [T.Object](./object)
 * [T.String](./string)
 * [T.InternedString](./interned-string)

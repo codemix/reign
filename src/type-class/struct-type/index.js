@@ -280,7 +280,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
               name: name,
               offset: 0,
               default: defaults.hasOwnProperty(name) ? () => defaults[name] : () => type.emptyValue(true),
-              type: (!type[$CanBeEmbedded] && type[$CanBeReferenced]) ? type.ref : type
+              type: type
             });
           }
           return normalized;
@@ -296,7 +296,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
               name: name,
               offset: 0,
               default: defaults.hasOwnProperty(name) ? () => defaults[name] : () => type.emptyValue(true),
-              type: (!type[$CanBeEmbedded] && type[$CanBeReferenced]) ? type.ref : type
+              type: type
             });
           }
           return optimizeFieldLayout(normalized);

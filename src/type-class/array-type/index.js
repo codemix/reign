@@ -197,18 +197,15 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
   const {TypeClass, ReferenceType, backing} = realm;
   let typeCounter = 0;
   return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
-    if (!ElementType[$CanBeEmbedded] && ElementType[$CanBeReferenced]) {
-      ElementType = ElementType.ref;
-    }
     return (Partial: Class<TypedArray<ElementType>>): Object => {
       // @flowIssue 252
-      const canContainReferences = ElementType[$CanContainReferences];
+      const mustClearElements = ElementType[$CanBeEmbedded] && ElementType[$CanContainReferences];
       // @flowIssue 252
-      Partial[$CanBeEmbedded] = true;
+      Partial[$CanBeEmbedded] = false;
       // @flowIssue 252
       Partial[$CanBeReferenced] = true;
       // @flowIssue 252
-      Partial[$CanContainReferences] = canContainReferences;
+      Partial[$CanContainReferences] = ElementType[$CanContainReferences];
       let MultidimensionalArray;
       const name = typeof config.name === 'string' ? config.name : (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${typeCounter.toString(16)}>`;
       if (realm.T[name]) {
@@ -422,11 +419,11 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         const existing = backing.getFloat64(address);
         if (existing > 0) {
           assert: existing !== address + 16, "Cannot overwrite the body of a heap allocated array."
-          if (canContainReferences) {
+          if (mustClearElements) {
             const length = backing.getUint32(address + 8);
             let current = existing;
             for (let i = 0; i < length; i++) {
-              ElementType.destructor(backing, current);
+              ElementType.clear(backing, current);
               current += BYTES_PER_ELEMENT;
             }
           }
@@ -537,11 +534,11 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
         destructor (backing: Backing, address: float64): void {
           const pointer = backing.getFloat64(address);
           assert: pointer > 0;
-          if (canContainReferences) {
+          if (mustClearElements) {
             const length = backing.getUint32(address + 8);
             let current = pointer;
             for (let i = 0; i < length; i++) {
-              ElementType.destructor(backing, current);
+              ElementType.clear(backing, current);
               current += BYTES_PER_ELEMENT;
             }
           }

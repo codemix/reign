@@ -26,7 +26,7 @@ export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
       const name = config.name || `%String<0x${typeCounter.toString(16)}>`;
       const id = config.id || (MIN_TYPE_ID + typeCounter);
 
-      Partial[$CanBeEmbedded] = true;
+      Partial[$CanBeEmbedded] = false;
       Partial[$CanBeReferenced] = true;
       Partial[$CanContainReferences] = true;
 

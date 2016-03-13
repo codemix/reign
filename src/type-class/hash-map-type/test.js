@@ -431,9 +431,6 @@ describeRealm('HashMapType', function (options) {
         name: T.String,
         dict: StringMap
       });
-    });
-
-    it('should create an empty container', function () {
       container = new Container();
     });
 
@@ -476,6 +473,7 @@ describeRealm('HashMapType', function (options) {
     });
 
     it('should perform a number of garbage collection cycles', function () {
+
       realm.backing.gc.cycle();
       realm.backing.gc.cycle();
       realm.backing.gc.cycle();

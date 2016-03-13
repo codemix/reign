@@ -11,7 +11,7 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 6;
+export const MIN_TYPE_ID = Math.pow(2, 20) * 5;
 
 /**
  * Makes an ObjectType type class for the given realm.

@@ -34,6 +34,7 @@ global.PRIMITIVE_NAMES = [
   'Float32',
   'Float64',
   'Boolean',
+  //'String'
   //'any',
   //'string',
   //'indexedString'

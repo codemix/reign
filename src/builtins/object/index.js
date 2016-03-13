@@ -175,7 +175,7 @@ export function make (realm: Realm): ObjectType<Object> {
     }
   }
 
-  TypedObject[$CanBeEmbedded] = true;
+  TypedObject[$CanBeEmbedded] = false;
 
   return TypedObject;
 }

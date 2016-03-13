@@ -381,19 +381,6 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
         }
       }
 
-      function clear (backing: Backing, header: float64): void {
-        const bucketArrayAddress = getArrayAddress(backing, header);
-        if (bucketArrayAddress !== 0) {
-          const bucketArrayLength = getArrayLength(backing, header);
-          let current = bucketArrayAddress;
-          for (let index = 0; index < bucketArrayLength; index++) {
-            Bucket.clear(backing, current);
-            current += BUCKET_SIZE;
-          }
-          setCardinality(backing, header, 0);
-        }
-      }
-
       const prototype = Object.create(HashSet.prototype, {
 
         /**
@@ -479,23 +466,39 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
       return {
         id,
         name,
-        byteLength: HEADER_SIZE,
+        byteLength: 8,
         byteAlignment: 8,
         constructor,
         prototype,
         accepts (input: any): boolean {
           return input !== null && typeof input === 'object';
         },
-        initialize (backing: Backing, address: float64, initialValue?: AcceptableInput): void {
+        initialize (backing: Backing, pointerAddress: float64, initialValue?: AcceptableInput): void {
+          const address = backing.gc.alloc(HEADER_SIZE, Partial.id, 1);
           createHashSetAt(backing, address, initialValue);
+          backing.setFloat64(pointerAddress, address);
         },
-        store (backing: Backing, address: float64, input?: AcceptableInput): void {
+        store (backing: Backing, pointerAddress: float64, input?: AcceptableInput): void {
+          const existing = backing.getFloat64(pointerAddress);
+          if (existing !== 0) {
+            backing.setFloat64(pointerAddress, 0);
+            backing.gc.unref(existing);
+          }
+          const address = backing.gc.alloc(HEADER_SIZE, Partial.id, 1);
           createHashSetAt(backing, address, input);
+          backing.setFloat64(pointerAddress, address);
         },
-        load (backing: Backing, address: float64): Partial {
-          return new Partial(backing, address);
+        load (backing: Backing, pointerAddress: float64): ?Partial {
+          const address = backing.getFloat64(pointerAddress);
+          return address === 0 ? null : new Partial(backing, address);
         },
-        clear: clear,
+        clear (backing: Backing, pointerAddress: float64) {
+          const address = backing.getFloat64(pointerAddress);
+          if (address !== 0) {
+            backing.setFloat64(pointerAddress, 0);
+            backing.gc.unref(address);
+          }
+        },
         destructor: destructor,
         randomValue (): TypedHashSet<EntryType> {
           const set = new Partial();

@@ -126,11 +126,11 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     }
 
     /**
-     * Remove a string based on the pointer at the given address.
+     * Decrement the reference count of a string at the given address.
      */
-    removeStringByPointer (pointerAddress: float64): boolean {
+    unref (address: float64): boolean {
       // @flowIssue 252
-      return removeStringByPointer(this[$Backing], this[$Address], pointerAddress);
+      return unrefString(this[$Backing], this[$Address], address);
     }
 
     /**
@@ -457,6 +457,36 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
     return address;
   }
   forceInline(storeMultibyteString);
+
+  /**
+   * Decrement the reference count for the given string and remove it from the pool if appropriate.
+   */
+  function unrefString (backing: Backing, poolAddress: float64, target: float64): uint32 {
+    const hash = getStringHash(backing, target);
+    const pointerArrayLength = getArrayLength(backing, poolAddress);
+    const pointerArrayAddress = getArrayAddress(backing, poolAddress);
+    trace: `Probing for hash ${hash}`;
+    const arena = backing.arenaFor(pointerArrayAddress);
+    const float64Array = arena.float64Array;
+    assert: float64Array.length > 0;
+    const startOffset = backing.offsetFor(pointerArrayAddress) >> 3;
+
+    let index = (hash & (pointerArrayLength - 1));
+    let offset = startOffset + index;
+    let address: float64 = 0;
+    while ((address = float64Array[offset]) !== 0 && address !== target) {
+      index++;
+      if (index >= pointerArrayLength) {
+        index = 0;
+      }
+      offset = startOffset + index;
+    }
+    const p = arena.startAddress + (offset << 3);
+
+    return removeStringByPointer(backing, poolAddress, p);
+  }
+  forceInline(unrefString);
+
 
   /**
    * Remove the given input + hash from the hash map.

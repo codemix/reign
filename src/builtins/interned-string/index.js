@@ -41,7 +41,7 @@ export function make (realm: Realm): PrimitiveType<string> {
       const existing: float64 = backing.getFloat64(pointerAddress);
       if (!input) {
         if (existing !== 0) {
-          pool.removeStringByPointer(pointerAddress);
+          pool.unref(existing);
           backing.setFloat64(pointerAddress, 0);
         }
       }
@@ -49,7 +49,7 @@ export function make (realm: Realm): PrimitiveType<string> {
         const address: float64 = pool.add(input);
         if (address !== existing) {
           if (existing !== 0) {
-            pool.removeStringByPointer(pointerAddress);
+            pool.unref(existing);
           }
           backing.setFloat64(pointerAddress, address);
         }
@@ -59,7 +59,7 @@ export function make (realm: Realm): PrimitiveType<string> {
     clear (backing: Backing, pointerAddress: float64): void {
       const existing: float64 = backing.getFloat64(pointerAddress);
       if (existing !== 0) {
-        pool.removeStringByPointer(pointerAddress);
+        pool.unref(existing);
         backing.setFloat64(pointerAddress, 0);
       }
     },

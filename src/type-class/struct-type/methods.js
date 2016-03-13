@@ -2,7 +2,7 @@
 
 import type Backing from "backing";
 
-import {$Address, $CanContainReferences} from "../../symbols";
+import {$Address, $CanBeEmbedded, $CanContainReferences} from "../../symbols";
 
 /**
  * Creates a function which can initialize a new struct, either
@@ -138,21 +138,22 @@ export function createClearStruct (fields: StructField<any>[]): ?(backing: Backi
  * Create a function which can destroy the given struct fields.
  */
 export function createStructDestructor (fields: StructField<any>[]): ?(backing: Backing, address: float64) => void {
-  const destructible = fields.filter(({type}) => {
+  const clearable = fields.filter(({type}) => {
     /* @flowIssue 252 */
-    return type[$CanContainReferences] && typeof type.destructor === 'function'
+    return type[$CanContainReferences] && typeof type.clear === 'function'
   });
-  const destructors = destructible.map(field => field.type.destructor);
-  const names = destructible.map((_, index) => `destructor_${index}`);
+  const clearers = clearable.map(field => field.type);
+  const names = clearable.map((_, index) => `clearable_${index}`);
   const body = `
     "use strict";
     return function destructor (backing, address) {
       ${names
-        .map((name, index) => `${name}(backing, address + ${destructible[index].offset});`)
-        .join('\n        ')}
+        .map((name, index) => `${name}.clear(backing, address + ${clearable[index].offset}); // ${clearable[index].name}`)
+        .join('\n      ')}
     };
   `;
-  return Function(...names, body)(...destructors);
+  console.log(body);
+  return Function(...names, body)(...clearers);
 }
 
 

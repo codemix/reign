@@ -68,14 +68,14 @@ const CARDINALITY_OFFSET = 12;
 
 const INITIAL_BUCKET_COUNT = 16;
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 5;
+export const MIN_TYPE_ID = Math.pow(2, 20) * 6;
 
 
 /**
  * Makes a HashMapType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
-  const {TypeClass, StructType, ReferenceType, T, backing} = realm;
+  const {TypeClass, StructType, T, backing} = realm;
   let typeCounter = 0;
   return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type, config: Object = {}): Function => {
     return (Partial: Function) => {
@@ -103,8 +103,6 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
           value: name
         }
       });
-
-      Partial.ref = new ReferenceType(Partial);
 
       function getArrayAddress (backing: Backing, address: float64): float64 {
         return backing.getFloat64(address);
@@ -407,27 +405,14 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         const bucketArrayAddress = getArrayAddress(backing, header);
         if (bucketArrayAddress !== 0) {
           const bucketArrayLength = getArrayLength(backing, header);
-          let current = bucketArrayAddress;
-          for (let index = 0; index < bucketArrayLength; index++) {
-            Bucket.destructor(backing, current);
-            current += BUCKET_SIZE;
-          }
           setArrayAddress(backing, header, 0);
           setArrayLength(backing, header, 0);
-          backing.free(bucketArrayAddress);
-        }
-      }
-
-      function clear (backing: Backing, header: float64): void {
-        const bucketArrayAddress = getArrayAddress(backing, header);
-        if (bucketArrayAddress !== 0) {
-          const bucketArrayLength = getArrayLength(backing, header);
           let current = bucketArrayAddress;
           for (let index = 0; index < bucketArrayLength; index++) {
             Bucket.clear(backing, current);
             current += BUCKET_SIZE;
           }
-          setCardinality(backing, header, 0);
+          backing.free(bucketArrayAddress);
         }
       }
 
@@ -534,23 +519,39 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
       return {
         id,
         name,
-        byteLength: HEADER_SIZE,
+        byteLength: 8,
         byteAlignment: 8,
         constructor,
         prototype,
         accepts (input: any): boolean {
           return input !== null && typeof input === 'object';
         },
-        initialize (backing: Backing, address: float64, initialValue?: AcceptableInput): void {
+        initialize (backing: Backing, pointerAddress: float64, initialValue?: AcceptableInput): void {
+          const address = backing.gc.calloc(HEADER_SIZE, Partial.id, 1);
           createHashMapAt(backing, address, initialValue);
+          backing.setFloat64(pointerAddress, address);
         },
-        store (backing: Backing, address: float64, input?: AcceptableInput): void {
+        store (backing: Backing, pointerAddress: float64, input?: AcceptableInput): void {
+          const existing = backing.getFloat64(pointerAddress);
+          if (existing !== 0) {
+            backing.setFloat64(pointerAddress, 0);
+            backing.gc.unref(existing);
+          }
+          const address = backing.gc.calloc(HEADER_SIZE, Partial.id, 1);
           createHashMapAt(backing, address, input);
+          backing.setFloat64(pointerAddress, address);
         },
-        load (backing: Backing, address: float64): Partial {
-          return new Partial(backing, address);
+        load (backing: Backing, pointerAddress: float64): ?Partial {
+          const address = backing.getFloat64(pointerAddress);
+          return address === 0 ? null : new Partial(backing, address);
         },
-        clear: clear,
+        clear (backing: Backing, pointerAddress: float64) {
+          const address = backing.getFloat64(pointerAddress);
+          if (address !== 0) {
+            backing.setFloat64(pointerAddress, 0);
+            backing.gc.unref(address);
+          }
+        },
         destructor: destructor,
         randomValue (): TypedHashMap<KeyType, ValueType> {
           const map = new Partial();

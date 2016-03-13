@@ -7,6 +7,7 @@ import {make as makeStructType} from "./type-class/struct-type";
 import {make as makeObjectType} from "./type-class/object-type";
 import {make as makeArrayType} from "./type-class/array-type";
 import {make as makeHashMapType} from "./type-class/hash-map-type";
+import {make as makeHashSetType} from "./type-class/hash-set-type";
 
 import {make as makeStringPool} from "./string-pool";
 
@@ -41,6 +42,7 @@ export class Realm {
   ArrayType: Class<TypeClass<ArrayType<any>>>;
   StringType: Class<TypeClass<PrimitiveType<string>>>;
   HashMapType: Class<TypeClass<HashMapType<any, any>>>;
+  HashSetType: Class<TypeClass<HashSetType<any, any>>>;
 
   T: {
     [name: string|Symbol]: Type;
@@ -68,6 +70,7 @@ export class Realm {
     this.ArrayType = makeArrayType(this);
     this.StringType = makeStringType(this);
     this.HashMapType = makeHashMapType(this);
+    this.HashSetType = makeHashSetType(this);
     this.isInitialized = false;
   }
 

@@ -96,6 +96,28 @@ declare class TypedHashMap<K, V> extends TypedEntity {
   static ref: ReferenceType<TypedHashMap<K, V>>;
 }
 
+declare class TypedHashSet<E> extends TypedEntity {
+  @@iterator(): Iterator<E>;
+  static [symbol: Symbol]: any;
+
+  static cast (input: any): TypedHashSet<E>;
+  static accepts (input: any): boolean;
+  static initialize (backing: Backing, address: float64, initialValue?: Object|Set): void;
+  static store (backing: Backing, address: float64, value: Object|Set|TypedHashSet<E>): void;
+  static load (backing: Backing, address: float64): TypedHashSet<E>;
+  static clear (backing: Backing, address: float64): void;
+  static destructor (backing: Backing, address: float64): void;
+  static emptyValue (): TypedHashSet<E>;
+  static randomValue (): TypedHashSet<E>;
+  static hashValue (input: TypedHashSet<E>|Set<E>): uint32;
+  static equal (valueA: TypedHashSet<E>, valueB: TypedHashSet<E>): boolean;
+  static compareValues (valueA: TypedHashSet<E>, valueB: TypedHashSet<E>): int8;
+  static compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8;
+  static compareAddressValue (backing: Backing, address: float64, value: TypedHashSet<E>): int8;
+  static Array: Class<ArrayType<TypedHashSet<E>>>;
+  static ref: ReferenceType<TypedHashSet<E>>;
+}
+
 declare class TypedStruct<S> extends TypedEntity {
   static [symbol: Symbol]: any;
   static cast (input: any): TypedStruct<S>;
@@ -140,6 +162,7 @@ declare type PrimitiveType<T> = Class<TypedPrimitive<T>>;
 declare type ReferenceType<T> = Class<TypedReference<T>>;
 declare type ArrayType<E> = Class<TypedArray<E>>;
 declare type HashMapType<K, V> = Class<TypedHashMap<K, V>>;
+declare type HashSetType<E> = Class<TypedHashSet<E>>;
 declare type StructType<S> = Class<TypedStruct<S>>;
 declare type ObjectType<S> = Class<TypedObject<S>>;
 
@@ -148,6 +171,7 @@ declare type Type = Class<
   | TypedReference<any>
   | TypedArray<any>
   | TypedHashMap<any, any>
+  | TypedHashSet<any>
   | TypedStruct<any>
   | TypedObject<Object>
 >;

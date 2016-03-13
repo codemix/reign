@@ -13,6 +13,7 @@ export function make (realm: Realm): PrimitiveType<any> {
     byteAlignment: 8,
     byteLength: 12,
     cast (input: any): any {
+      // @flowIssue 252
       if (typeof input === 'function' || typeof input === 'symbol') {
         throw new TypeError(`Cannot store values with type: ${typeof input}`);
       }
@@ -24,6 +25,7 @@ export function make (realm: Realm): PrimitiveType<any> {
       }
     },
     accepts (input: any): boolean {
+      // @flowIssue 252
       if (typeof input === 'function' || typeof input === 'symbol') {
         return false;
       }
@@ -34,7 +36,7 @@ export function make (realm: Realm): PrimitiveType<any> {
     initialize (backing: Backing, address: float64, initialValue: any): void {
       const Type = realm.typeOf(initialValue);
       let initialAddress;
-      if (Type === null) {
+      if (Type == null) {
         backing.setFloat64(address, 0);
         backing.setUint32(address + 8, 0);
       }
@@ -60,7 +62,7 @@ export function make (realm: Realm): PrimitiveType<any> {
       if (existingTypeId !== 0) {
         const existingType = realm.I[existingTypeId];
 
-        if (existingType === Type && Type.byteLength <= 8) {
+        if (Type != null && existingType === Type && Type.byteLength <= 8) {
           Type.store(backing, address, value);
           return; // nothing left to do.
         }
@@ -77,7 +79,7 @@ export function make (realm: Realm): PrimitiveType<any> {
       }
       let valueAddress;
 
-      if (Type === null) {
+      if (Type == null) {
         backing.setFloat64(address, 0);
         backing.setUint32(address + 8, 0);
       }
@@ -118,12 +120,15 @@ export function make (realm: Realm): PrimitiveType<any> {
     },
     hashValue (input): uint32 {
       const Type = realm.typeOf(input);
-      if (Type === null) {
+      if (Type == null) {
         return 4;
       }
       else {
         return Type.hashValue(input);
       }
+    },
+    flowType () {
+      return `any`;
     }
   });
   Any[$CanBeEmbedded] = true;

@@ -17,7 +17,7 @@ export type StringPool = {
   get (input: string): float64;
   add (input: string): float64;
   remove (input: string): boolean;
-  removeStringByPointer (pointerAddress: float64): boolean;
+  unref (address: float64): boolean;
   has (input: string): boolean;
 };
 
@@ -461,7 +461,7 @@ export function make (realm: Realm, poolPointerAddress: float64): StringPool {
   /**
    * Decrement the reference count for the given string and remove it from the pool if appropriate.
    */
-  function unrefString (backing: Backing, poolAddress: float64, target: float64): uint32 {
+  function unrefString (backing: Backing, poolAddress: float64, target: float64): boolean {
     const hash = getStringHash(backing, target);
     const pointerArrayLength = getArrayLength(backing, poolAddress);
     const pointerArrayAddress = getArrayAddress(backing, poolAddress);

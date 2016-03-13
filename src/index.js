@@ -91,10 +91,13 @@ export class Realm {
     registerBuiltins(this);
     let rootAddress = this.backing.getFloat64(ROOT_MAP_POINTER_ADDRESS);
     if (rootAddress === 0) {
+      // @flowIssue 252
       this[$RootHashMap] = new this.T.HashMap();
+      // @flowIssue 252
       this.backing.setFloat64(ROOT_MAP_POINTER_ADDRESS, this[$RootHashMap][$Address]);
     }
     else {
+      // @flowIssue 252
       this[$RootHashMap] = new this.T.HashMap(this.backing, rootAddress);
     }
     this.isInitialized = true;
@@ -106,6 +109,7 @@ export class Realm {
    * Return the type of the given value.
    */
   typeOf (value: any): ?Type {
+    // @flowIssue 252
     if (value == null || typeof value === 'function' || typeof value === 'symbol') {
       return null;
     }
@@ -130,14 +134,17 @@ export class Realm {
   }
 
   get (key: any): any {
+    // @flowIssue 252
     return this[$RootHashMap].get(key);
   }
 
   has (key: any): any {
+    // @flowIssue 252
     return this[$RootHashMap].has(key);
   }
 
   set (key: any, value: any): Realm {
+    // @flowIssue 252
     this[$RootHashMap].set(key, value);
     return this;
   }

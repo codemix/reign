@@ -77,6 +77,9 @@ export function make (realm: Realm): PrimitiveType<string> {
     hashValue: hashString,
     equal (valueA: string, valueB: string) {
       return valueA === valueB;
+    },
+    flowType () {
+      return `string`;
     }
   });
 

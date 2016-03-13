@@ -207,6 +207,9 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
           else {
             return Target.hashValue(input);
           }
+        },
+        flowType () {
+          return `Reference<${Target.flowType()}>`;
         }
       };
     };

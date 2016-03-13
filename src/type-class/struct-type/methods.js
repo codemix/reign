@@ -148,11 +148,10 @@ export function createStructDestructor (fields: StructField<any>[]): ?(backing: 
     "use strict";
     return function destructor (backing, address) {
       ${names
-        .map((name, index) => `${name}.clear(backing, address + ${clearable[index].offset}); // ${clearable[index].name}`)
+        .map((name, index) => `${name}.clear(backing, address + ${clearable[index].offset});`)
         .join('\n      ')}
     };
   `;
-  console.log(body);
   return Function(...names, body)(...clearers);
 }
 

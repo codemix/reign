@@ -90,7 +90,6 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
 
       type AcceptableInput = Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object;
 
-      // @flowIssue 252
       Partial[$CanBeEmbedded] = false;
       Partial[$CanBeReferenced] = true;
       Partial[$CanContainReferences] = true;
@@ -561,8 +560,11 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
           }
           return map;
         },
-        emptyValue (): null {
+        emptyValue (): Partial {
           return new Partial();
+        },
+        flowType () {
+          return `HashMap<${KeyType.flowType()}, ${ValueType.flowType()}>`;
         }
       };
     };

@@ -30,6 +30,9 @@ export function make ({PrimitiveType}: Realm): PrimitiveType<boolean> {
     },
     hashValue (input): uint32 {
      return hashInteger(input ? 1 : 0);
-   }
+    },
+    flowType () {
+      return `boolean`;
+    }
   });
 }

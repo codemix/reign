@@ -28,6 +28,9 @@ export function make ({PrimitiveType}: Realm): PrimitiveType<float64> {
     randomValue (): float64 {
       return ((Math.random() * Math.pow(2, 16)) * Math.pow(2, 8)) - Math.random() * Math.pow(2, 24)
     },
-    hashValue: hashFloat64
+    hashValue: hashFloat64,
+    flowType () {
+      return `float64`;
+    }
   });
 }

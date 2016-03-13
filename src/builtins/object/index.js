@@ -91,7 +91,10 @@ export function make (realm: Realm): ObjectType<Object> {
     randomValue (): any {
       return null;
     },
-    hashValue: hashAny
+    hashValue: hashAny,
+    flowType () {
+      return `Object`;
+    }
   });
 
   function createAccessors (target: TypedObject) {
@@ -141,13 +144,15 @@ export function make (realm: Realm): ObjectType<Object> {
 
   function loadObject (backing: Backing, address: float64): Object {
     const output = {
+      // @flowIssue 252
       [$Backing]: backing,
+      // @flowIssue 252
       [$Address]: address
     };
     const length = backing.getUint32(address);
     let current = address + 8;
     for (let i = 0; i < length; i++) {
-      output[T.String.load(backing, current)] = T.Any.load(backing, current + 8);
+      output[(T.String.load(backing, current): any)] = T.Any.load(backing, current + 8);
       current += 24;
     }
     return output;

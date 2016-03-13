@@ -215,7 +215,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
       const id = typeof config.id === 'number' && config.id > 0 ? config.id : MIN_TYPE_ID + typeCounter;
 
 
-      // @ flowIssue 285
+      // @flowIssue 285
       Object.defineProperties(Partial, {
         name: {
           value: name
@@ -632,7 +632,10 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           return [];
         },
         hashValue: hashArray,
-        randomValue: randomArray
+        randomValue: randomArray,
+        flowType () {
+          return `Array<${ElementType.flowType()}>`;
+        }
       };
     };
   });

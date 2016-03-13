@@ -1,7 +1,6 @@
 /* @flow */
 import Backing from "backing";
 import {TypedObject} from "../";
-import hashString from "../../"
 
 import {
   createInitializeStruct,
@@ -68,6 +67,12 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
           configurable: true,
           value: `%Struct<0x${typeCounter.toString(16)}>`
         },
+        flowType: {
+          configurable: true,
+          value () {
+            return 'Object';
+          }
+        },
         Array: {
           get () {
             if (StructArray === undefined) {
@@ -101,7 +106,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
        */
       function constructor (backingOrInput: ?Backing|Object, address?: float64, embedded?: boolean) {
         if (!isFinalized) {
-          throw new ReferenceError(`Cannot create an instance of ${name} before the struct is finalized.`);
+          throw new ReferenceError(`Cannot create an instance of a struct before it is finalized.`);
         }
         else if (backingOrInput instanceof Backing) {
           this[$Backing] = backingOrInput;
@@ -226,6 +231,11 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
           },
           randomValue: {
             value: createRandomValue(fields)
+          },
+          flowType: {
+            value () {
+              return `{${fields.map(field => `${field.name}: ${field.type.flowType()};`).join('\n')}}`;
+            }
           }
         });
 

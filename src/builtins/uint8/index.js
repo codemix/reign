@@ -28,6 +28,9 @@ export function make ({PrimitiveType}: Realm): PrimitiveType<uint8> {
     randomValue (): uint8 {
       return Math.floor(Math.random() * Math.pow(2, 8));
     },
-    hashValue: hashInteger
+    hashValue: hashInteger,
+    flowType () {
+      return `uint8`;
+    }
   });
 }

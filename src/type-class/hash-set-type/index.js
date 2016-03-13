@@ -83,7 +83,6 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
 
       type AcceptableInput = Set|TypedHashSet<EntryType>|EntryType|Object;
 
-      // @flowIssue 252
       Partial[$CanBeEmbedded] = false;
       Partial[$CanBeReferenced] = true;
       Partial[$CanContainReferences] = true;
@@ -173,6 +172,7 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
         else if (Array.isArray(input)) {
           createHashSetFromArray(backing, address, input);
         }
+        // @flowIssue 252
         else if (typeof input[Symbol.iterator] === 'function') {
           createHashSetFromIterable(backing, address, input);
         }
@@ -219,7 +219,7 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
       /**
        * Create a hashset from an iterable.
        */
-      function createHashSetFromIterable (backing: Backing, header: float64, input: Iterable<EntryType>): void {
+      function createHashSetFromIterable (backing: Backing, header: float64, input: $Fixme<Iterable<EntryType>>): void {
         createEmptyHashSet(backing, header);
         for (const entry of input) {
           const hash: uint32 = EntryType.hashValue((entry: any));
@@ -508,8 +508,11 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
           }
           return set;
         },
-        emptyValue (): null {
+        emptyValue (): Partial {
           return new Partial();
+        },
+        flowType () {
+          return `HashSet<${EntryType.flowType()}>`;
         }
       };
     };

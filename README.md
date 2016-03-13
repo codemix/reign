@@ -26,7 +26,7 @@ import TypeRealm from "type-realm";
 const backing = new Backing({
   name: 'demo',
   arenaSize: 16 * 1024 * 1024, // 16Mb, set to the largest possible value for your environment, up to 2Gb.
-  arenaAllocator: {
+  arenaSource: {
     type: 'mmap',
     dirname: __dirname + '/data'
   }

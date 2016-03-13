@@ -6,6 +6,7 @@ Builtin Type Classes:
 
 * [ArrayType](./array-type)
 * [HashMapType](./hash-map-type)
+* [HashSetType](./hash-set-type)
 * [ObjectType](./object-type)
 * [PrimitiveType](./primitive-type)
 * [ReferenceType](./reference-type)

@@ -2,6 +2,7 @@
 
 import Backing from "backing";
 import {TypedObject} from "../";
+import {alignTo} from "../../util";
 
 import type {Realm} from "../../";
 
@@ -500,6 +501,21 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
           }
         },
         destructor: destructor,
+        equal (setA: TypedHashSet<EntryType>, setB: TypedHashSet<EntryType>): boolean {
+          if (setA[$Backing] === setB[$Backing] && setA[$Address] === setB[$Address]) {
+            return true;
+          }
+          else if (setA[size] !== setB[size]) {
+            return false;
+          }
+
+          for (const key of setA) {
+            if (!setB.has(key)) {
+              return false;
+            }
+          }
+          return true;
+        },
         randomValue (): TypedHashSet<EntryType> {
           const set = new Partial();
           const size = Math.ceil(Math.random() * 32);
@@ -517,13 +533,4 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
       };
     };
   });
-}
-
-
-/**
- * Ensure that the given value is aligned to the given number of bytes.
- */
-export function alignTo (value: number, numberOfBytes: number): number {
-  const rem = value % numberOfBytes;
-  return rem === 0 ? value : value + (numberOfBytes - rem);
 }

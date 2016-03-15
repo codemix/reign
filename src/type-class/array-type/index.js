@@ -2,6 +2,7 @@
 
 import Backing from "backing";
 import {TypedObject} from "../";
+import {alignTo} from "../../util";
 
 import type {Realm} from "../../";
 
@@ -550,6 +551,21 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           backing.setFloat64(address, 0);
           backing.setUint32(address + 8, 0);
         },
+        equal (arrayA: ArrayType<ElementType>, arrayB: ArrayType<ElementType>): boolean {
+          if (arrayA[$Backing] === arrayB[$Backing] && arrayA[$Address] === arrayB[$Address]) {
+            return true;
+          }
+          else if (arrayA.length !== arrayB.length) {
+            return false;
+          }
+          const length = arrayA.length;
+          for (let i = 0; i < length; i++) {
+            if (!ElementType.equal(arrayA[i], arrayB[i])) {
+              return false;
+            }
+          }
+          return true;
+        },
         compareValues (valueA: any, valueB: any): int8 {
           if (valueA === valueB) {
             return 0;
@@ -640,13 +656,3 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
     };
   });
 };
-
-
-
-/**
- * Ensure that the given value is aligned to the given number of bytes.
- */
-export function alignTo (value: number, numberOfBytes: number): number {
-  const rem = value % numberOfBytes;
-  return rem === 0 ? value : value + (numberOfBytes - rem);
-}

@@ -97,6 +97,29 @@ export function createStoreStruct (Partial: PartialType<Object>, fields: StructF
 }
 
 /**
+ * Create the `.accepts()` method for a list of fields.
+ */
+export function createAccepts (fields: StructField<any>[]): (input: any) => boolean {
+  const argNames = ['$Address', ...fields.map((_, index) => `type${index}`)];
+  const args = [$Address, ...fields.map(field => field.type)];
+  const body = `
+    "use strict";
+    return function accepts (input) {
+      if (input == null || typeof input !== 'object') {
+        return false;
+      }
+      ${fields.map(({name, type, offset}, index) => `
+        if (!type${index}.accepts(input${isValidIdentifier(name) ? `.${name}` : `[${JSON.stringify(name)}]`})) {
+          return false;
+        }
+      `).join('')}
+      return true;
+    };
+  `;
+  return (Function(...argNames, body))(...args);
+}
+
+/**
  * Create the `.toJSON()` method for a list of fields.
  */
 export function createToJSON (fields: StructField<any>[]): () => Object {

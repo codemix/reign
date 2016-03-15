@@ -1,6 +1,7 @@
 /* @flow */
 import Backing from "backing";
 import {TypedObject} from "../";
+import {alignTo} from "../../util";
 
 import {
   createInitializeStruct,
@@ -8,6 +9,7 @@ import {
   createToJSON,
   createStructDestructor,
   createClearStruct,
+  createAccepts,
   createEqual,
   createCompareValues,
   createCompareAddresses,
@@ -197,6 +199,9 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
           fieldTypes: {
             value: fieldTypes
           },
+          accepts: {
+            value: createAccepts(fields)
+          },
           initialize: {
             value: createInitializeStruct(Partial, fields)
           },
@@ -375,11 +380,3 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
   });
 };
 
-
-/**
- * Ensure that the given value is aligned to the given number of bytes.
- */
-export function alignTo (value: number, numberOfBytes: number): number {
-  const rem = value % numberOfBytes;
-  return rem === 0 ? value : value + (numberOfBytes - rem);
-}

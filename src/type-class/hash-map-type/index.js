@@ -4,6 +4,7 @@ import Backing from "backing";
 import {TypedObject} from "../";
 
 import type {Realm} from "../../";
+import {alignTo} from "../../util";
 
 import {
   $Backing,
@@ -552,6 +553,22 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
           }
         },
         destructor: destructor,
+        equal (mapA: TypedHashMap<KeyType, ValueType>, mapB: TypedHashMap<KeyType, ValueType>): boolean {
+          if (mapA[$Backing] === mapB[$Backing] && mapA[$Address] === mapB[$Address]) {
+            return true;
+          }
+          else if (mapA[size] !== mapB[size]) {
+            return false;
+          }
+
+          for (const [key, a] of mapA) {
+            const b = mapB.get(key);
+            if (a !== b && (b === undefined || !ValueType.equal(a, b))) {
+              return false;
+            }
+          }
+          return true;
+        },
         randomValue (): TypedHashMap<KeyType, ValueType> {
           const map = new Partial();
           const size = Math.ceil(Math.random() * 32);
@@ -569,13 +586,4 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
       };
     };
   });
-}
-
-
-/**
- * Ensure that the given value is aligned to the given number of bytes.
- */
-export function alignTo (value: number, numberOfBytes: number): number {
-  const rem = value % numberOfBytes;
-  return rem === 0 ? value : value + (numberOfBytes - rem);
 }

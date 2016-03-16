@@ -195,7 +195,13 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
         store: storeUnion,
         load: loadUnion,
         clear: clearUnion,
-        destructor: unionDestructor
+        destructor: unionDestructor,
+        emptyValue (): null {
+          return null;
+        },
+        randomValue (): null {
+          return possibleTypes[Math.floor(Math.random() * possibleTypes.length)].randomValue();
+        }
       };
     };
   });

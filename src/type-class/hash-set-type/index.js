@@ -505,7 +505,7 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
           if (setA[$Backing] === setB[$Backing] && setA[$Address] === setB[$Address]) {
             return true;
           }
-          else if (setA[size] !== setB[size]) {
+          else if (setA.size !== setB.size) {
             return false;
           }
 

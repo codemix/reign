@@ -551,7 +551,7 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
           backing.setFloat64(address, 0);
           backing.setUint32(address + 8, 0);
         },
-        equal (arrayA: ArrayType<ElementType>, arrayB: ArrayType<ElementType>): boolean {
+        equal (arrayA: TypedArray<ElementType>, arrayB: TypedArray<ElementType>): boolean {
           if (arrayA[$Backing] === arrayB[$Backing] && arrayA[$Address] === arrayB[$Address]) {
             return true;
           }

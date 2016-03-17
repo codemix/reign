@@ -7,7 +7,6 @@ type Addressable = {
 };
 
 declare class TypedEntity {
-  static [symbol: Symbol]: any;
   static id: uint32;
   static name: string;
   static byteLength: uint32;
@@ -55,7 +54,8 @@ declare class TypedReference<T> extends TypedEntity {
 
 declare class TypedArray<E> extends TypedEntity {
   @@iterator(): Iterator<E>;
-  static [symbol: Symbol]: any;
+  length: uint32;
+  [symbol: Symbol|uint32]: any;
   static cast (input: any): TypedArray<E>;
   static accepts (input: any): boolean;
   static initialize (backing: Backing, address: float64, initialValue?: E): void;
@@ -77,8 +77,11 @@ declare class TypedArray<E> extends TypedEntity {
 
 declare class TypedHashMap<K, V> extends TypedEntity {
   @@iterator(): Iterator<[K, V]>;
+  size: uint32;
+  get (key: K): ?V;
+  set (key: K, value: V): TypedHashMap<K, V>;
+  has (key: K): boolean;
   static [symbol: Symbol]: any;
-
   static cast (input: any): TypedHashMap<K, V>;
   static accepts (input: any): boolean;
   static initialize (backing: Backing, address: float64, initialValue?: Object|Map): void;
@@ -100,6 +103,9 @@ declare class TypedHashMap<K, V> extends TypedEntity {
 declare class TypedHashSet<E> extends TypedEntity {
   @@iterator(): Iterator<E>;
   static [symbol: Symbol]: any;
+  size: uint32;
+  add (value: E): TypedHashSet<E>;
+  has (key: E): boolean;
 
   static cast (input: any): TypedHashSet<E>;
   static accepts (input: any): boolean;
@@ -159,6 +165,46 @@ declare class TypedObject<S> extends TypedEntity {
   static ref: ReferenceType<TypedObject<S>>;
 }
 
+declare class TypedEnum<T> extends TypedEntity {
+  static [symbol: Symbol]: any;
+  static cast (input: any): TypedEnum<T>;
+  static accepts (input: any): boolean;
+  static initialize (backing: Backing, address: float64, initialValue?: T|TypedEnum<T>): void;
+  static store (backing: Backing, address: float64, value: T|TypedEnum<T>): void;
+  static load (backing: Backing, address: float64): TypedEnum<T>;
+  static clear (backing: Backing, address: float64): void;
+  static destructor (backing: Backing, address: float64): void;
+  static emptyValue (): TypedEnum<T>;
+  static randomValue (): TypedEnum<T>;
+  static hashValue (input: TypedEnum<T>|T): uint32;
+  static equal (valueA: TypedEnum<T>|T, valueB: TypedEnum<T>|T): boolean;
+  static compareValues (valueA: TypedEnum<T>|T, valueB: TypedEnum<T>|T): int8;
+  static compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8;
+  static compareAddressValue (backing: Backing, address: float64, value: TypedEnum<T>|T): int8;
+  static Array: Class<ArrayType<TypedEnum<T>>>;
+  static ref: ReferenceType<TypedEnum<T>>;
+}
+
+declare class TypedUnion<T> extends TypedEntity {
+  static [symbol: Symbol]: any;
+  static cast (input: any): TypedUnion<T>;
+  static accepts (input: any): boolean;
+  static initialize (backing: Backing, address: float64, initialValue?: T|TypedUnion<T>): void;
+  static store (backing: Backing, address: float64, value: T|TypedUnion<T>): void;
+  static load (backing: Backing, address: float64): TypedUnion<T>;
+  static clear (backing: Backing, address: float64): void;
+  static destructor (backing: Backing, address: float64): void;
+  static emptyValue (): TypedUnion<T>;
+  static randomValue (): TypedUnion<T>;
+  static hashValue (input: TypedUnion<T>|T): uint32;
+  static equal (valueA: TypedUnion<T>|T, valueB: TypedUnion<T>|T): boolean;
+  static compareValues (valueA: TypedUnion<T>|T, valueB: TypedUnion<T>|T): int8;
+  static compareAddresses (backing: Backing, addressA: float64, addressB: float64): int8;
+  static compareAddressValue (backing: Backing, address: float64, value: TypedUnion<T>|T): int8;
+  static Array: Class<ArrayType<TypedUnion<T>>>;
+  static ref: ReferenceType<TypedUnion<T>>;
+}
+
 declare type PrimitiveType<T> = Class<TypedPrimitive<T>>;
 declare type ReferenceType<T> = Class<TypedReference<T>>;
 declare type ArrayType<E> = Class<TypedArray<E>>;
@@ -166,6 +212,8 @@ declare type HashMapType<K, V> = Class<TypedHashMap<K, V>>;
 declare type HashSetType<E> = Class<TypedHashSet<E>>;
 declare type StructType<S> = Class<TypedStruct<S>>;
 declare type ObjectType<S> = Class<TypedObject<S>>;
+declare type EnumType<T> = Class<TypedEnum<T>>;
+declare type UnionType<T> = Class<TypedUnion<T>>;
 
 declare type Type = Class<
     TypedPrimitive<any>
@@ -175,6 +223,8 @@ declare type Type = Class<
   | TypedHashSet<any>
   | TypedStruct<any>
   | TypedObject<Object>
+  | TypedEnum<any>
+  | TypedUnion<any>
 >;
 
 declare type PartialType<T> = {

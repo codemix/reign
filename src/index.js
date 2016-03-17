@@ -45,6 +45,9 @@ export class Realm {
   StringType: Class<TypeClass<PrimitiveType<string>>>;
   HashMapType: Class<TypeClass<HashMapType<any, any>>>;
   HashSetType: Class<TypeClass<HashSetType<any, any>>>;
+  UnionType: Class<TypeClass<UnionType<any>>>;
+  EnumType: Class<TypeClass<EnumType<any>>>;
+
 
   T: {
     [name: string|Symbol]: Type;

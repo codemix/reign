@@ -557,12 +557,13 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
           if (mapA[$Backing] === mapB[$Backing] && mapA[$Address] === mapB[$Address]) {
             return true;
           }
-          else if (mapA[size] !== mapB[size]) {
+          else if (mapA.size !== mapB.size) {
             return false;
           }
 
           for (const [key, a] of mapA) {
             const b = mapB.get(key);
+            // @flowFixme we should check the value types here.
             if (a !== b && (b === undefined || !ValueType.equal(a, b))) {
               return false;
             }

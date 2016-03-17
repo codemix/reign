@@ -31,7 +31,7 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
 
       Union[$CanBeEmbedded] = true;
       Union[$CanBeReferenced] = false;
-      Union[$CanContainReferences] = possibleTypes.some(type => type[$CanContainReferences]);
+      Union[$CanContainReferences] = possibleTypes.some((type: $Fixme<Type>): boolean => type[$CanContainReferences]);
 
       const byteAlignment = Math.max(4, ...possibleTypes.map(type => type.byteAlignment));
       const byteLength = alignTo(Math.max(...possibleTypes.map(type => type.byteLength)) + 4, byteAlignment);
@@ -51,6 +51,7 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
       });
 
       const prototype = Object.create(null, {
+        // @flowIssue 285
         value: {
           enumerable: true,
           get (): any {
@@ -70,6 +71,7 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
             storeUnion(backing, address, value);
           }
         },
+        // @flowIssue 285
         type: {
           enumerable: true,
           get (): ?Type {
@@ -206,7 +208,7 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
         emptyValue (): null {
           return null;
         },
-        randomValue (): null {
+        randomValue (): any {
           return possibleTypes[Math.floor(Math.random() * possibleTypes.length)].randomValue();
         }
       };

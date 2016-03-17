@@ -44,6 +44,10 @@ describeRealm('UnionType', function (options) {
       instance = new StringOrPoint({x: 123, y: 456});
     });
 
+    it('should have the right type', function () {
+      instance.type.should.equal(Point);
+    });
+
     it('instance.value should be an instance of Point', function () {
       instance.value.should.be.an.instanceOf(Point);
     });
@@ -55,6 +59,10 @@ describeRealm('UnionType', function (options) {
 
     it('should overwrite the value with a different type', function () {
       instance.value = "hello world";
+    });
+
+    it('should have the right type', function () {
+      instance.type.should.equal(T.String);
     });
 
     it('should have overwritten the value', function () {
@@ -71,6 +79,10 @@ describeRealm('UnionType', function (options) {
 
     it('should write a null value', function () {
       instance.value = null;
+    });
+
+    it('should have the right type', function () {
+      (instance.type === null).should.equal(true);
     });
 
     it('should read a null value', function () {

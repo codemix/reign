@@ -2,6 +2,8 @@
 
 A type class for typed hash sets. Takes an element type as input and produces a hash set type which can store elements of that type.
 
+> Note: These hash sets do not guarantee any particular order when they are iterated.
+
 Usage:
 
 ```js

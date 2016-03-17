@@ -70,6 +70,13 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
             storeUnion(backing, address, value);
           }
         },
+        type: {
+          enumerable: true,
+          get (): ?Type {
+            const typeId = this[$Backing].getUint32(this[$Address] + idOffset);
+            return typeId === 0 ? null : realm.I[typeId];
+          }
+        },
         inspect: {
           value () {
             return this.value;

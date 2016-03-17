@@ -12,3 +12,5 @@ Builtin Type Classes:
 * [ReferenceType](./reference-type)
 * [StringType](./string-type)
 * [StructType](./struct-type)
+* [EnumType](./enum-type)
+* [UnionType](./union-type)

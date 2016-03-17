@@ -9,6 +9,7 @@ import {make as makeArrayType} from "./type-class/array-type";
 import {make as makeHashMapType} from "./type-class/hash-map-type";
 import {make as makeHashSetType} from "./type-class/hash-set-type";
 import {make as makeUnionType} from "./type-class/union-type";
+import {make as makeEnumType} from "./type-class/enum-type";
 
 import {make as makeStringPool} from "./string-pool";
 
@@ -73,6 +74,7 @@ export class Realm {
     this.HashMapType = makeHashMapType(this);
     this.HashSetType = makeHashSetType(this);
     this.UnionType = makeUnionType(this);
+    this.EnumType = makeEnumType(this);
     this.isInitialized = false;
   }
 
@@ -149,6 +151,11 @@ export class Realm {
     // @flowIssue 252
     this[$RootHashMap].set(key, value);
     return this;
+  }
+
+  delete (key: any): boolean {
+    // @flowIssue 252
+    return this[$RootHashMap].delete(key);
   }
 }
 

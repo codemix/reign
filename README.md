@@ -21,6 +21,25 @@ Currently supports various kinds of data type:
 * [Enums](./src/type-class/enum-type)
 * [Unions](./src/type-class/union-type)
 
+As well as the following builtins:
+
+* [T.Any](./src/builtins/any)
+* [T.Array](./src/builtins/array)
+* [T.Boolean](./src/builtins/boolean)
+* [T.Int8](./src/builtins/int8)
+* [T.Int16](./src/builtins/int16)
+* [T.Int32](./src/builtins/int32)
+* [T.Uint8](./src/builtins/uint8)
+* [T.Uint16](./src/builtins/uint16)
+* [T.Uint32](./src/builtins/uint32)
+* [T.Float32](./src/builtins/float32)
+* [T.Float64](./src/builtins/float64)
+* [T.HashMap](./src/builtins/hash-map)
+* [T.HashSet](./src/builtins/hash-set)
+* [T.Object](./src/builtins/object)
+* [T.String](./src/builtins/string)
+* [T.InternedString](./src/builtins/interned-string)
+
 
 ## Examples
 

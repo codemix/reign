@@ -54,6 +54,8 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
 
       typeCounter++;
 
+      const capturedTypeCount = typeCounter;
+
       type Metadata = {
         byteLength: uint32;
         byteAlignment: uint32;
@@ -182,10 +184,10 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
 
         Object.defineProperties(Partial, {
           id: {
-            value: options.id || (MIN_TYPE_ID + typeCounter)
+            value: options.id || (MIN_TYPE_ID + capturedTypeCount)
           },
           name: {
-            value: options.name || `%StructType<0x${typeCounter.toString(16)}>`
+            value: options.name || `%StructType<0x${capturedTypeCount.toString(16)}>`
           },
           byteLength: {
             value: metadata.byteLength

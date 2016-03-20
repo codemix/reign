@@ -529,6 +529,9 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
         },
         flowType () {
           return `HashSet<${EntryType.flowType()}>`;
+        },
+        hashValue (input: TypedHashSet<EntryType>): uint32 {
+          return input[$Address];
         }
       };
     };

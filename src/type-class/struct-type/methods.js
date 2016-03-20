@@ -219,7 +219,10 @@ export function createCompareAddresses (fields: StructField<any>[]): (a: float64
  * Create a function which can determine whether two structs are structurally equal.
  */
 export function createEqual (fields: StructField<any>[]): (a: Object, b: Object) => boolean {
-  const checkValues = fields.map(({name}, index) => {
+  const checkValues = fields.map(({name, type}, index) => {
+    if (typeof type.equal !== 'function') {
+      throw new Error(`Type ${type.name} does not have an equal() method.`);
+    }
     if (isValidIdentifier(name)) {
       return `
         else if (!type${index}.equal(a.${name}, b.${name})) {
@@ -350,6 +353,9 @@ export function createCompareAddressValue (fields: StructField<any>[]): (backing
  */
 export function createHashStruct (fields: StructField<any>[]): (input: Object) => uint32 {
   const checkValues = fields.map(({name, type}, index) => {
+    if (typeof type.hashValue !== 'function') {
+      throw new Error(`Type ${type.name} does not have a method called "hashValue".`)
+    }
     if (isValidIdentifier(name)) {
       return `
         hash ^= type${index}.hashValue(input.${name});
@@ -359,7 +365,7 @@ export function createHashStruct (fields: StructField<any>[]): (input: Object) =
     else {
       const sanitizedName = JSON.stringify(name);
       return `
-        hash ^= type${index}.hash(input[${sanitizedName}]);
+        hash ^= type${index}.hashValue(input[${sanitizedName}]);
         hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
       `;
     }

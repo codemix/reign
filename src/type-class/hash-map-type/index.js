@@ -17,9 +17,6 @@ import {
   $SetElement
 } from "../../symbols";
 
-export type ForEachVisitor = (element: any, index: uint32, context: HashMap) => void;
-export type MapVisitor = (element: any, index: uint32, context: HashMap) => any;
-export type FilterVisitor = (element: any, index: uint32, context: HashMap) => boolean;
 
 export class HashMap<K, V> extends TypedObject {
 
@@ -80,6 +77,8 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
   let typeCounter = 0;
   return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type, config: Object = {}): Function => {
     return (Partial: Function) => {
+
+      type ForEachVisitor = (value: ValueType, key: KeyType, map: TypedHashMap<KeyType, ValueType>) => void;
 
       const name = typeof config.name === 'string' ? config.name : `HashMap<${KeyType.name}, ${ValueType.name}>`;
       if (realm.T[name]) {
@@ -490,6 +489,21 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
           }
         },
 
+        forEach: {
+          value (visitor: ForEachVisitor): TypedHashMap<KeyType, ValueType> {
+            const backing = this[$Backing];
+            const address = this[$Address];
+            const bucketArrayLength = getArrayLength(backing, address);
+            let current: float64 = getArrayAddress(backing, address);
+            for (let index = 0; index < bucketArrayLength; index++) {
+              if (getBucketHash(backing, current) !== 0) {
+                visitor(getBucketValue(backing, current), getBucketKey(backing, current), this);
+              }
+              current += BUCKET_SIZE;
+            }
+            return this;
+          }
+        },
 
         /**
          * Iterate the key / values in the map.
@@ -500,9 +514,9 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
          */
         [Symbol.iterator]: {
           *value () {
-            let backing = this[$Backing];
-            let address = this[$Address];
-            let bucketArrayLength = getArrayLength(backing, address);
+            const backing = this[$Backing];
+            const address = this[$Address];
+            const bucketArrayLength = getArrayLength(backing, address);
             let current: float64 = getArrayAddress(backing, address);
             for (let index = 0; index < bucketArrayLength; index++) {
               if (getBucketHash(backing, current) !== 0) {
@@ -583,6 +597,9 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         },
         flowType () {
           return `HashMap<${KeyType.flowType()}, ${ValueType.flowType()}>`;
+        },
+        hashValue (input: TypedHashMap<KeyType, ValueType>): uint32 {
+          return input[$Address];
         }
       };
     };

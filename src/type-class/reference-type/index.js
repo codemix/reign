@@ -151,6 +151,17 @@ export function make (realm: Realm): TypeClass<ReferenceType<any>> {
         emptyValue () {
           return null;
         },
+        equal (valueA: ?Object, valueB: ?Object): boolean {
+          if (valueA === valueB) {
+            return true;
+          }
+          else if (!valueA || !valueB) {
+            return false;
+          }
+          else {
+            return Target.equal(valueA, valueB);
+          }
+        },
         compareValues (valueA: ?Object, valueB: ?Object): int8 {
           return Target.compareValues(valueA, valueB);
         },

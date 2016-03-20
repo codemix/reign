@@ -1,3 +1,4 @@
 *.cfg
 *.asm
 coverage
+data

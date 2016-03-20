@@ -1,5 +1,5 @@
 {
-  "name": "type-realm",
+  "name": "reign",
   "version": "0.0.1",
   "description": "A persistent, typed-objects implementation.",
   "main": "index.js",
@@ -7,42 +7,63 @@
     "test": "test"
   },
   "dependencies": {
+    "babel-polyfill": "^6.7.2",
+    "babel-runtime": "^6.6.1",
     "bluebird": "^3.3.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.1",
     "type-registry": "0.0.2"
   },
   "devDependencies": {
+    "babel-cli": "^6.6.5",
+    "babel-core": "^6.7.2",
+    "babel-plugin-contracts": "^1.1.1",
+    "babel-plugin-trace": "^1.0.0",
+    "babel-plugin-transform-async-to-module-method": "^6.7.0",
+    "babel-plugin-transform-runtime": "^6.6.0",
+    "babel-polyfill": "^6.7.2",
+    "babel-preset-es2015": "^6.6.0",
+    "babel-preset-es2015-node5": "^1.2.0",
+    "babel-preset-react": "^6.5.0",
+    "babel-preset-stage-0": "^6.5.0",
     "backing": "^0.1.0",
+    "flow-bin": "^0.22.0",
+    "isparta": "^4.0.0",
+    "mocha": "^2.3.3",
+    "should": "^7.1.1"
+  },
+  "s": {
+    "babel-runtime": "^6.6.1",
     "babel-cli": "^6.6.4",
     "babel-core": "^6.6.4",
     "babel-plugin-contracts": "^1.1.1",
     "babel-plugin-trace": "^1.0.0",
     "babel-plugin-transform-async-to-module-method": "^6.5.2",
+    "babel-plugin-transform-runtime": "^6.6.0",
     "babel-plugin-typecheck": "^3.6.1",
     "babel-polyfill": "^6.6.1",
     "babel-preset-es2015": "^6.6.0",
     "babel-preset-es2015-node5": "^1.1.2",
     "babel-preset-react": "^6.5.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "flow-bin": "^0.22.0",
-    "isparta": "^4.0.0",
-    "mocha": "^2.3.3",
-    "should": "^7.1.1"
+    "babel-preset-stage-0": "^6.5.0"
   },
   "scripts": {
     "prepublish": "NODE_ENV=production npm run build && npm test",
     "test": "flow check && mocha --max-old-space-size=8192 --expose-gc",
     "watch": "mocha --watch --max-old-space-size=8192 --expose-gc",
     "build": "babel -d ./lib ./src",
+    "build-legacy": "NODE_ENV=legacy babel -d ./lib-legacy ./src",
     "coverage": "NODE_ENV=coverage babel-node node_modules/isparta/bin/isparta cover --report text --report html node_modules/mocha/bin/_mocha -- --reporter dot --bail",
     "flow": "flow"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codemix/type-realm.git"
+    "url": "git+https://github.com/codemix/reign.git"
   },
   "keywords": [
+    "realm",
+    "reign",
+    "domain",
     "type",
     "types",
     "type system",
@@ -52,8 +73,8 @@
   "author": "Charles Pick <charles@codemix.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/codemix/type-realm/issues"
+    "url": "https://github.com/codemix/reign/issues"
   },
-  "homepage": "https://github.com/codemix/type-realm#readme",
+  "homepage": "https://github.com/codemix/reign#readme",
   "private": true
 }

@@ -1,9 +1,30 @@
-# type-realm
-A realm for typed objects.
+# reign
+Persistent, typed objects for JavaScript.
 
-[![Build Status](https://travis-ci.org/codemix/type-realm.svg?branch=master)](https://travis-ci.org/codemix/type-realm)
+[![Build Status](https://travis-ci.org/codemix/reign.svg?branch=master)](https://travis-ci.org/codemix/reign)
 
 ## What?
+
+Provides a realm (like a namespace) which can contain various kinds of typed object, and mechanisms for
+storing and loading those objects to disk.
+
+Currently supports various kinds of data type:
+
+* [Arrays](./src/type-class/array-type)
+* [HashMaps](./src/type-class/hash-map-type)
+* [HashSets](./src/type-class/hash-set-type)
+* [Objects](./src/type-class/object-type)
+* [Primitives](./src/type-class/primitive-type)
+* [References](./src/type-class/reference-type)
+* [Strings](./src/type-class/string-type)
+* [Structs](./src/type-class/struct-type)
+* [Enums](./src/type-class/enum-type)
+* [Unions](./src/type-class/union-type)
+
+
+## Examples
+
+See the [examples](./examples) directory.
 
 ## API Documentation
 
@@ -11,9 +32,9 @@ Currently very work in progress, see [src/README.md](./src/README.md).
 
 ## Installation
 
-Install via [npm](https://npmjs.org/package/type-realm).
+Install via [npm](https://npmjs.org/package/reign).
 ```sh
-npm install type-realm
+npm install reign
 ```
 
 ## Usage
@@ -21,18 +42,18 @@ npm install type-realm
 ```js
 
 import Backing from "backing";
-import TypeRealm from "type-realm";
+import {Realm} from "reign";
 
 const backing = new Backing({
   name: 'demo',
-  arenaSize: 16 * 1024 * 1024, // 16Mb, set to the largest possible value for your environment, up to 2Gb.
+  arenaSize: 16 * 1024 * 1024, // 16Mb, you should set this to the largest possible value for your environment, up to 2Gb.
   arenaSource: {
     type: 'mmap',
     dirname: __dirname + '/data'
   }
 });
 
-const realm = new TypeRealm(backing);
+const realm = new Realm(backing);
 
 async function run () {
   await realm.init();

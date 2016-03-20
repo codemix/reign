@@ -11,19 +11,19 @@ Contains a few thoroughly commented examples illustrating how to use the library
 
 ## Running the examples
 
-1. Checkout the repository and install the dependencies.
+### Checkout the repository and install the dependencies.
 ```sh
 git clone https://github.com/codemix/reign.git
 cd reign
 npm install
 ```
 
-2. Ensure you're using a recent-ish version of node, ideally 5+
+### Ensure you're using a recent-ish version of node, ideally 5+
 ```sh
 node -v
 ```
 
-3. Run each example from the CLI
+### Run each example from the CLI
 ```sh
 node examples/simple.js
 node examples/counter.js

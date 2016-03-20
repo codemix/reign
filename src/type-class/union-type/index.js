@@ -205,11 +205,17 @@ export function make (realm: Realm): TypeClass<UnionType<any>> {
         load: loadUnion,
         clear: clearUnion,
         destructor: unionDestructor,
+        equal (a: any, b: any): any {
+          return typeFor(a).equal(a, b);
+        },
         emptyValue (): null {
           return null;
         },
         randomValue (): any {
           return possibleTypes[Math.floor(Math.random() * possibleTypes.length)].randomValue();
+        },
+        hashValue (input: any): uint32 {
+          return typeFor(input).hashValue(input);
         }
       };
     };

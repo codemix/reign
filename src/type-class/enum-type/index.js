@@ -96,11 +96,17 @@ export function make (realm: Realm): TypeClass<EnumType<any>> {
       load: loadEnum,
       clear: clearEnum,
       destructor: enumDestructor,
+      equal (a: any, b: any): boolean {
+        return a === b;
+      },
       emptyValue (): any {
         return possibleValues[0];
       },
       randomValue (): any {
         return possibleValues[Math.floor(Math.random() * possibleValues.length)];
+      },
+      hashValue (input: any): uint32 {
+        return indexFor(input) + 777;
       }
     };
 
@@ -172,11 +178,17 @@ export function make (realm: Realm): TypeClass<EnumType<any>> {
       load: loadEnum,
       clear: clearEnum,
       destructor: enumDestructor,
+      equal (a: any, b: any): boolean {
+        return a === b;
+      },
       emptyValue (): any {
         return possibleValues[0];
       },
       randomValue (): any {
         return possibleValues[Math.floor(Math.random() * possibleValues.length)];
+      },
+      hashValue (input: any): uint32 {
+        return indexFor(input) + 777;
       }
     };
 

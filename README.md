@@ -57,8 +57,63 @@ npm install reign
 ```
 
 ## Usage
-See the [API documentation](./src/README.md#usage).
+```js
+var Backing = require('backing');
+var Realm = require('reign').Realm;
 
+var backing = new Backing({
+  name: 'example',
+  arenaSize: 1024 * 1024,
+  arenaSource: {
+    type: 'mmap', // can also be 'array-buffer' to use storage which will not survive program termination.
+    dirname: __dirname + '/../data'
+  }
+});
+
+var realm = new Realm(backing);
+
+// `T` is an object containing all the registered types in the realm, e.g. `T.String` or `T.Object`.
+var T = realm.T;
+
+var StructType = realm.StructType;
+
+// Initialize the realm, loading the data files. (Returns a promise)
+realm.init().then(function () {
+  const Thing = new StructType({
+    id: T.Uint32,
+    name: T.String,
+    description: T.String,
+    extra: T.Object // Holds additional properties.
+  });
+
+  let thing = realm.get('London');
+  if (!thing) {
+    // This must be the first time we've run this program.
+    thing = new Thing({
+      id: 123,
+      name: 'London',
+      description: 'The city of london.',
+      extra: {
+        type: 'Place'
+      }
+    });
+    console.log('Saving a new Thing called London');
+    realm.set('London', thing);
+  }
+  else {
+    console.log('Loaded an existing thing called London')
+  }
+
+  console.log(JSON.stringify(thing, null, 2));
+
+  if (thing.extra.type !== 'City') {
+    console.log('London is a city, not just a place.')
+    thing.extra.type = 'City';
+  }
+
+});
+```
+Run this example more than once to see different results.
 
 ## License
 

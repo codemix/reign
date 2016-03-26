@@ -18,6 +18,7 @@ import {
 } from "../../symbols";
 
 
+
 export class HashMap<K, V> extends TypedObject {
 
   /**
@@ -66,15 +67,12 @@ const CARDINALITY_OFFSET = 12;
 
 const INITIAL_BUCKET_COUNT = 16;
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 6;
-
-
 /**
  * Makes a HashMapType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
-  const {TypeClass, StructType, T, backing} = realm;
-  let typeCounter = 0;
+  const {TypeClass, StructType, T, backing, registry} = realm;
+  const idRange = registry.range('HashMapType');
   return new TypeClass('HashMapType', (KeyType: Type, ValueType: Type, config: Object = {}): Function => {
     return (Partial: Function) => {
 
@@ -85,8 +83,7 @@ export function make (realm: Realm): TypeClass<HashMapType<Type, Type>> {
         return realm.T[name];
       }
 
-      typeCounter++;
-      const id = typeof config.id === 'number' ? config.id : MIN_TYPE_ID + typeCounter;
+      const id = typeof config.id === 'number' ? config.id : idRange.next();
 
       type AcceptableInput = Map|TypedHashMap<KeyType, ValueType>|Array<[KeyType, ValueType]>|Object;
 

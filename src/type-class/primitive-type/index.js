@@ -13,22 +13,19 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = 1;
-
 export class Primitive extends TypedObject {}
 
 /**
  * Makes a PrimitiveType type class for a given realm.
  */
 export function make (realm: Realm): TypeClass<PrimitiveType<any>> {
-  const {TypeClass, backing} = realm;
-  let typeCounter = 0;
+  const {TypeClass, backing, registry} = realm;
+  const idRange = registry.range('PrimitiveType');
 
   return new TypeClass('PrimitiveType', (config: Object): Function => {
     return (primitive: PrimitiveType<any>): Object => {
-      typeCounter++;
-      const name = config.name || `%Primitive<0x${typeCounter.toString(16)}>`;
-      const id = config.id || (MIN_TYPE_ID + typeCounter);
+      const name = config.name || `%Primitive<0x${idRange.value.toString(16)}>`;
+      const id = config.id || idRange.next();
 
       // @flowIssue 252
       primitive[$CanBeEmbedded] = true;

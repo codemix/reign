@@ -62,15 +62,12 @@ const CARDINALITY_OFFSET = 12;
 
 const INITIAL_BUCKET_COUNT = 16;
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 7;
-
-
 /**
  * Makes a HashSetType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
-  const {TypeClass, StructType, ReferenceType, T, backing} = realm;
-  let typeCounter = 0;
+  const {TypeClass, StructType, ReferenceType, T, backing, registry} = realm;
+  const idRange = registry.range('HashSetType');
   return new TypeClass('HashSetType', (EntryType: Type, config: Object = {}): Function => {
     return (Partial: Function) => {
 
@@ -79,8 +76,7 @@ export function make (realm: Realm): TypeClass<HashSetType<Type, Type>> {
         return realm.T[name];
       }
 
-      typeCounter++;
-      const id = typeof config.id === 'number' ? config.id : MIN_TYPE_ID + typeCounter;
+      const id = typeof config.id === 'number' ? config.id : idRange.next();
 
       type AcceptableInput = Set|TypedHashSet<EntryType>|EntryType|Object;
 

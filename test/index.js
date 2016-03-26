@@ -1,7 +1,7 @@
 import Backing from "backing";
 import {Realm} from "../src";
 
-describeBacking('TypeRealm', function (options) {
+describeBacking('Realm', function (options) {
   let backing;
   let realm;
   let T;

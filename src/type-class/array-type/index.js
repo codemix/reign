@@ -22,8 +22,6 @@ export type MapVisitor = (element: any, index: uint32, context: BaseArray) => an
 export type FilterVisitor = (element: any, index: uint32, context: BaseArray) => boolean;
 export type Reducer = (accumulator: any, element: any, index: uint32, context: BaseArray) => any;
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 4;
-
 export class BaseArray extends TypedObject {
 
   BYTES_PER_ELEMENT: uint32;
@@ -195,8 +193,8 @@ function ensureSlots (min: uint32) {
  * Makes a TypedArray type class for a given realm.
  */
 export function make (realm: Realm): TypeClass<ArrayType<any>> {
-  const {TypeClass, ReferenceType, backing} = realm;
-  let typeCounter = 0;
+  const {TypeClass, ReferenceType, backing, registry} = realm;
+  const idRange = registry.range('ArrayType');
   return new TypeClass('ArrayType', (ElementType: Type, config: Object = {}): Function => {
     return (Partial: Class<TypedArray<ElementType>>): Object => {
       // @flowIssue 252
@@ -208,12 +206,11 @@ export function make (realm: Realm): TypeClass<ArrayType<any>> {
       // @flowIssue 252
       Partial[$CanContainReferences] = ElementType[$CanContainReferences];
       let MultidimensionalArray;
-      const name = typeof config.name === 'string' ? config.name : (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${typeCounter.toString(16)}>`;
+      const name = typeof config.name === 'string' ? config.name : (typeof ElementType.name === 'string' && ElementType.name.length) ? `Array<${ElementType.name}>` : `%Array<0x${idRange.value.toString(16)}>`;
       if (realm.T[name]) {
         return realm.T[name];
       }
-      typeCounter++;
-      const id = typeof config.id === 'number' && config.id > 0 ? config.id : MIN_TYPE_ID + typeCounter;
+      const id = typeof config.id === 'number' && config.id > 0 ? config.id : idRange.next();
 
 
       // @flowIssue 285

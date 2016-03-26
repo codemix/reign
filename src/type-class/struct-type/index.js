@@ -41,20 +41,16 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 2;
-
 export class Struct extends TypedObject {}
 
 export function make (realm: Realm): TypeClass<StructType<any>> {
-  const {TypeClass, ReferenceType, backing} = realm;
-  let typeCounter = 0;
+  const {TypeClass, ReferenceType, backing, registry} = realm;
+  const idRange = registry.range('StructType');
   return new TypeClass('StructType', function (fields?: Type|StructFieldsConfig, lengthOrOptions?: number| StructOptions, options?: StructOptions) {
 
     return (Partial: Function) => {
 
-      typeCounter++;
-
-      const capturedTypeCount = typeCounter;
+      const capturedId = idRange.next();
 
       type Metadata = {
         byteLength: uint32;
@@ -69,7 +65,7 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
       Object.defineProperties(Partial, {
         name: {
           configurable: true,
-          value: `%Struct<0x${typeCounter.toString(16)}>`
+          value: `%Struct<0x${capturedId.toString(16)}>`
         },
         flowType: {
           configurable: true,
@@ -184,10 +180,10 @@ export function make (realm: Realm): TypeClass<StructType<any>> {
 
         Object.defineProperties(Partial, {
           id: {
-            value: options.id || (MIN_TYPE_ID + capturedTypeCount)
+            value: options.id || capturedId
           },
           name: {
-            value: options.name || `%StructType<0x${capturedTypeCount.toString(16)}>`
+            value: options.name || `%StructType<0x${capturedId.toString(16)}>`
           },
           byteLength: {
             value: metadata.byteLength

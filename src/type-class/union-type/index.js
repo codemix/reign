@@ -15,19 +15,17 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 8;
-
 /**
  * Makes a UnionType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<UnionType<any>> {
-  const {TypeClass} = realm;
-  let typeCounter = 0;
+  const {TypeClass, registry} = realm;
+  const idRange = registry.range('UnionType');
+
   return new TypeClass('UnionType', (...possibleTypes: Type[]) => {
     return (Union: Function): Object => {
-      typeCounter++;
       const name = possibleTypes.map(PossibleType => PossibleType.name).join(' | ');
-      const id = MIN_TYPE_ID + typeCounter;
+      const id = idRange.next();
 
       Union[$CanBeEmbedded] = true;
       Union[$CanBeReferenced] = false;

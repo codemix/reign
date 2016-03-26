@@ -12,20 +12,17 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 3;
-
 /**
  * Makes a ReferenceType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<ReferenceType<any>> {
-  const {TypeClass} = realm;
-  let typeCounter = 0;
+  const {TypeClass, registry} = realm;
+  const idRange = registry.range('ReferenceType');
   return new TypeClass('ReferenceType', (Target: Function): Function => {
 
     return (Reference: Function): Object => {
-      typeCounter++;
-      const name = typeof Target.name === 'string' && Target.name.length > 0 ? `Reference<${Target.name}>` : `%Reference<0x${typeCounter.toString(16)}>`;
-      const id = MIN_TYPE_ID + typeCounter;
+      const id = idRange.next();
+      const name = typeof Target.name === 'string' && Target.name.length > 0 ? `Reference<${Target.name}>` : `%Reference<0x${id.toString(16)}>`;
 
       Reference[$CanBeEmbedded] = true;
       Reference[$CanBeReferenced] = false;

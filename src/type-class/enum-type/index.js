@@ -16,18 +16,16 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 9;
-
 /**
  * Makes a EnumType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<EnumType<any>> {
-  const {TypeClass} = realm;
-  let typeCounter = 0;
+  const {TypeClass, registry} = realm;
+  const idRange = registry.range('EnumType');
 
   function createTinyEnumType (Enum: Function, possibleValues: Type[]): Object {
     const name = possibleValues.map(value => inspect(value)).join(' | ');
-    const id = MIN_TYPE_ID + typeCounter;
+    const id = idRange.next();
     const byteAlignment = 1;
     const byteLength = 1;
 
@@ -114,7 +112,7 @@ export function make (realm: Realm): TypeClass<EnumType<any>> {
 
   function createLargeEnumType (Enum: Function, possibleValues: Type[]): Object {
     const name = possibleValues.map(value => inspect(value)).join(' | ');
-    const id = MIN_TYPE_ID + typeCounter;
+    const id = idRange.next();
     const byteAlignment = 2;
     const byteLength = 2;
     const valueMap = new Map(possibleValues.map((value, index) => [value, index]));
@@ -196,8 +194,6 @@ export function make (realm: Realm): TypeClass<EnumType<any>> {
 
   return new TypeClass('EnumType', (...possibleValues: Type[]) => {
     return (Enum: Function): Object => {
-      typeCounter++;
-
       let EnumArray;
       // @flowIssue 285
       Object.defineProperties(Enum, {

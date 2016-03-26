@@ -12,19 +12,16 @@ import {
   $CanContainReferences
 } from "../../symbols";
 
-export const MIN_TYPE_ID = Math.pow(2, 20) * 1;
-
 /**
  * Makes a StringType type class for the given realm.
  */
 export function make (realm: Realm): TypeClass<PrimitiveType<string>> {
-  const {TypeClass} = realm;
-  let typeCounter = 0;
+  const {TypeClass, registry} = realm;
+  const idRange = registry.range('StringType');
   return new TypeClass('StringType', (config: Object): Function => {
     return (Partial: Function): Object => {
-      typeCounter++;
-      const name = config.name || `%String<0x${typeCounter.toString(16)}>`;
-      const id = config.id || (MIN_TYPE_ID + typeCounter);
+      const id = config.id || idRange.next();
+      const name = config.name || `%String<0x${id.toString(16)}>`;
 
       Partial[$CanBeEmbedded] = false;
       Partial[$CanBeReferenced] = true;
